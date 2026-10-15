@@ -1,6 +1,8 @@
 # Contributing to StudyHub
 
-Everyone is welcome to contribute: learners, educators, designers, developers, accessibility advocates, and people working with AI tools.
+Everyone is welcome to contribute: learners, educators, designers, developers, and accessibility advocates.
+
+Use whatever tools make you productive.
 
 StudyHub is currently defining its product and repository blueprint. Feedback on learning experiences, terminology, accessibility, and architecture is useful at this stage. V0 scope and implementation issues have not been defined yet.
 
@@ -11,18 +13,6 @@ Read [the README](README.md), [product vision](docs/product-vision.md), [archite
 Preserve the agreed hierarchy: a **Lecture** contains **Classes**. Label new ideas as proposals until they have been agreed upon.
 
 For substantial changes to product direction or architecture, describe the problem, intended user experience, and tradeoffs before expanding the implementation. Keep changes focused so they are easy to review.
-
-## Human and AI-assisted contributions
-
-AI-assisted work is welcome. The contributor remains responsible for understanding the change, verifying its behavior, and ensuring that they have permission to contribute the material.
-
-- Explain what changed and why it helps learners.
-- Describe the checks performed and any limitations.
-- Use fictional study material in examples; avoid private notes, recordings, credentials, and personal information.
-- Verify technical claims and dependency capabilities rather than treating generated suggestions as established facts.
-- Keep documentation aligned with the final change.
-
-There are no application setup or test commands yet. When implementation begins, contributors should use the commands documented in the README.
 
 ## Collaboration
 

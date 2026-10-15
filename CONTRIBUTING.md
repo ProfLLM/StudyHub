@@ -14,6 +14,12 @@ Preserve the agreed hierarchy: a **Lecture** contains **Classes**. Label new ide
 
 For substantial changes to product direction or architecture, describe the problem, intended user experience, and tradeoffs before expanding the implementation. Keep changes focused so they are easy to review.
 
+## Pull requests and approval
+
+Submit changes to `main` through a pull request. Before merging, obtain at least one approving review from another human team member with write access to the repository. Repository administrators may merge their own pull requests without another team member's approval.
+
+The GitHub [required approval ruleset](https://github.com/ProfLLM/StudyHub/rules/25138704) enforces one approving review for pull requests into `main`, with an administrator exception limited to pull request merges. Changes must still go through a pull request.
+
 ## Collaboration
 
 Be respectful and specific. Discuss ideas and behavior without personal attacks. Make room for different experience levels and accessibility needs, and explain unfamiliar terminology when it matters.

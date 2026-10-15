@@ -22,6 +22,7 @@ StudyHub will be a Flutter study app. It will start on macOS and expand to other
 - Distinguish confirmed requirements, proposed designs, and open questions. Record meaningful changes in the relevant blueprint and decision register.
 - During blueprint work, do not generate application code, add dependencies, choose unresolved product policies, or turn the vision into a V0 plan unless requested.
 - Create GitHub issues, publish changes, or make external updates only when authorized by the task.
+- Changes to `main` require a pull request and approval from another human team member with write access. Repository administrators may merge their own pull requests without peer approval. Agents must not merge or use the administrator exception unless the user explicitly asks; see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Make focused, reviewable changes. Preserve unrelated work and avoid speculative abstractions.
 - Update documentation when behavior, architecture, terminology, or setup changes.
 - Keep these instructions in `AGENTS.md`; keep `CLAUDE.md` as a pointer rather than a second copy.

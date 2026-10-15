@@ -15,6 +15,7 @@ Keep confirmed requirements separate from proposed implementation choices. Updat
 | AI providers | Aim to work with the learner's own ChatGPT or Anthropic subscription. |
 | AI editing | Let ChatGPT and Claude write and update app content at the learner's request, such as a study plan. |
 | Community | Open source, AI friendly, and welcoming to everyone. |
+| Merge approval | Changes to `main` require a pull request and at least one approving review from another human team member with write access. Repository administrators may merge their own pull requests without peer approval; the exception is limited to pull request merges. See [CONTRIBUTING.md](../CONTRIBUTING.md). |
 | Open-source license | MIT, selected for its simple, permissive terms. See [LICENSE](../LICENSE). |
 | Current scope | Documentation and repository blueprints only. V0 planning and GitHub issues come later. |
 

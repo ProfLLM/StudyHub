@@ -1,6 +1,6 @@
 # Architecture blueprint
 
-This is a proposed architecture for discussion. Flutter, macOS first, the Lecture → Classes hierarchy, and the product direction are confirmed. The detailed model, storage system, canvas implementation, and AI connection mechanism remain proposals or open decisions.
+The first implementation is a small Flutter macOS navigation prototype using Class → Lectures → study content and local JSON files. The sections below distinguish that implementation from proposals for the richer learning experience.
 
 ## Boundaries
 
@@ -25,8 +25,8 @@ The app and external assistants should use the same content model and editing ru
 
 | Concept | Responsibility |
 | --- | --- |
-| Lecture | Stable identity, metadata, and references to its Classes. |
-| Class | Stable identity, parent Lecture, metadata, and study content. |
+| Class | Stable identity, metadata, and references to its Lectures. |
+| Lecture | Stable identity, parent Class, metadata, and study content. |
 | Content item | An identifiable, typed unit of study content with a versioned payload. |
 | Enrichment | A content item linked to the material it explains or extends. |
 | Asset | Referenced media or other resources used by content, subject to access rules. |
@@ -75,7 +75,7 @@ Design an app-owned editing boundary that both the UI and authorized external to
 
 The future contract should cover:
 
-- Discovering and reading authorized Lectures, Classes, and content items.
+- Discovering and reading authorized Classes, Lectures, and content items.
 - Creating and updating supported study content, including study plans.
 - Attaching enrichments and required assets.
 - Reporting validation failures, unsupported content, and edit conflicts clearly.
@@ -89,38 +89,34 @@ Integration discovery, authentication, transport, and permission UX are open que
 
 ## Persistence and privacy
 
-A proposed default is local-first storage, so learners can access their own content without an active AI connection. This is a design recommendation, not a confirmed requirement or a chosen database.
+The navigation prototype uses local JSON storage, so learners can browse their library without an AI connection. `JsonLibraryStore` implements the `LibraryStore` boundary; `path_provider` selects the macOS application support directory. The file has `schemaVersion: 1`, Classes with nested Lectures, stable random IDs, titles, and a notes string for each Lecture.
+
+Writes flush a temporary file before renaming it over the library. UI state changes only after a successful save. Missing files mean a new empty library; malformed files and unsupported versions block editing without overwriting data. There is no migration, multi-process locking, automatic backup, or sync implementation. Deleting a Class cascades to its Lectures after GUI confirmation. See the [README](../README.md) for location, backup/reset guidance, and the JSON shape.
+
+This is an interim storage choice for the navigation prototype. Long-term asset storage and portability remain open.
 
 Keep a persistence interface between the model and storage. Evaluate serialization, asset storage, schema migration, backup, and portable export together. Cloud sync, accounts, collaboration, and encryption policies remain undecided.
 
 External AI processing should have an explicit context boundary: share only content authorized for the requested task. Define credential handling, voice retention, and recording consent before implementation. Avoid leaking private study material into diagnostics or repository fixtures.
 
-## Suggested Flutter layout
-
-The following is a future layout, not a scaffold created by this change:
+## Implemented Flutter layout
 
 ```text
 lib/
-├── app/                      # Composition, navigation, and app-wide presentation
-├── domain/                   # Lecture, Class, content, and editing rules
-├── features/
-│   ├── library/               # Lecture and Class browsing
-│   ├── note_capture/          # Typed, voice, and eventual ink workflows
-│   └── learning_canvas/       # Editing, enrichment, and rich presentation
-├── integrations/
-│   └── ai/                    # External assistant adapters and editing contract
-├── persistence/              # Storage and migration adapters
-└── platform/                 # OS-specific capability adapters
-assets/                       # App-owned resources
-test/                         # Relevant unit and widget tests
-integration_test/             # End-to-end behavior where needed
-macos/                        # Flutter's macOS runner, when generated
+├── main.dart                   # Native path lookup and composition
+├── app/study_hub_app.dart       # Material UI, navigation, CRUD dialogs, placeholder canvas
+├── domain/library.dart         # Flutter-independent model, IDs, JSON schema validation
+└── persistence/library_store.dart # Storage interface and local JSON adapter
+test/                           # File persistence and navigation widget tests
+macos/                          # Generated Flutter macOS runner
 ```
 
-Other platform runners should be added when their implementation is authorized. Start with a single Flutter app; extract reusable packages only when a concrete need justifies them. State management, routing, dependencies, and minimum OS versions have not been selected.
+The prototype uses Flutter's built-in state and navigation mechanisms. Its only direct runtime package beyond Flutter is `path_provider`. Schema versioning and stable identities are implemented; structured rich-content items, external editing rules, history, and undo remain proposals. The notes canvas displays stored plain text when present and an empty-state message otherwise; editing is not implemented.
 
-## Validation targets for future work
+Future platform adapters should keep capture, rendering, and OS capabilities behind explicit boundaries. Add other platform runners when their implementation is authorized; extract packages only when concrete reuse justifies them.
 
-The eventual implementation should be verifiable at its boundaries: hierarchy and schema validation, editing and undo, persistence migrations, rendering fallbacks, and scoped external edits. HTML isolation and platform-specific capture need targeted validation when they exist.
+## Validation
 
-Document actual development commands once the Flutter project is created. No build, runtime, integration, or platform behavior has been validated by this blueprint.
+The [README](../README.md) documents formatting, analysis, tests, and native build commands. Automated tests exercise persistence round trips, invalid schemas, failed writes, GUI CRUD, navigation, and error states. Widget tests do not validate the native path provider, sandbox, runner, or window behavior; build and launch on macOS with full Xcode to validate those boundaries.
+
+Future HTML isolation, capture, external edits, and richer content rendering require targeted tests when implemented.

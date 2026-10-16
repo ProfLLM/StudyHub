@@ -6,11 +6,11 @@ This is the canonical repository guidance for all coding agents, including Codex
 
 Read [README.md](README.md), [the product vision](docs/product-vision.md), [the architecture](docs/architecture.md), and [the decision register](docs/decisions.md) before making substantial changes. Read [CONTRIBUTING.md](CONTRIBUTING.md) when preparing a contribution.
 
-StudyHub will be a Flutter study app. It will start on macOS and expand to other platforms. The current repository contains blueprints only; there is no runnable app or established test suite.
+StudyHub will be a Flutter study app. It will start on macOS and expand to other platforms. The repository contains a small macOS navigation prototype with local JSON persistence. See README.md for the toolchain and checks.
 
 ## Preserve the product intent
 
-- Preserve the hierarchy **Lecture → Classes → study content**. A Lecture contains Classes. Do not silently rename, reverse, or add levels to this hierarchy.
+- Preserve the hierarchy **Class → Lectures → study content**. A Class contains Lectures (changed explicitly for the navigation prototype). Do not silently rename, reverse, or add levels to this hierarchy.
 - Typed notes and voice input are intended capture methods; ink is a later direction. Do not infer a V0 commitment from the long-term vision.
 - Treat the learning canvas as a core experience. Text, visuals, HTML enrichment, interactive content, and animation should be able to coexist.
 - Plan for interoperability with ChatGPT and Claude, including user-requested content edits and study plans.
@@ -43,7 +43,7 @@ The architecture document describes proposed boundaries; it does not mandate a f
 
 Use checks appropriate to the change and report what actually ran.
 
-For documentation changes, check internal links, terminology, consistency, and whether examples accurately reflect the repository. Do not invent build or test results for this blueprint-only repository.
+For documentation changes, check internal links, terminology, consistency, and whether examples accurately reflect the repository. Do not invent build or test results; distinguish Flutter widget tests from native macOS validation.
 
 After Flutter code exists, follow its documented toolchain and commands. Format changed Dart files, run static analysis, and run relevant tests for behavior changes. Add meaningful coverage for new behavior; avoid tests that merely repeat implementation details. Validate macOS-specific behavior on macOS and keep shared logic testable independently.
 

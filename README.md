@@ -1,5 +1,7 @@
 # StudyHub
 
+![StudyHub logo](assets/branding/studyhub-logo.png)
+
 StudyHub is a Flutter study app, starting with macOS. This first prototype focuses on navigation and saves your library to a local JSON file.
 
 ```text
@@ -96,9 +98,11 @@ flutter analyze
 flutter test
 ```
 
-Tests cover file round trips, schema errors, failed writes, class/lecture CRUD, parent navigation, save/load errors, and narrow-window navigation. Native macOS build and launch still need validation on a machine with full Xcode installed.
+Tests cover file round trips, schema errors, failed writes, class/lecture CRUD, parent navigation, save/load errors, and narrow-window navigation. The macOS release build has passed with full Xcode installed. Native window behavior and the Dock icon still need visual validation.
 
 ## Project direction and contributions
+
+The app uses the white-background logo in `assets/branding/`. Its book-and-connections symbol is the macOS app icon shown in Finder and the Dock. The icon sizes live in `macos/Runner/Assets.xcassets/AppIcon.appiconset/`; rebuild and reopen the app to pick up icon changes.
 
 The longer-term goal is a learning canvas for notes, visuals, interaction, and animation, with supported connections to the learner's own ChatGPT or Anthropic subscription. Those connections are not implemented or validated.
 

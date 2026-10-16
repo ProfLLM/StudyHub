@@ -1,0 +1,5 @@
+Generated with the built-in image generation tool.
+Asset: studyhub-logo.png (PNG on a white background)
+
+Use case: logo-brand.
+Create a clean flat StudyHub logo on a pure solid white background. One horizontal lockup: on the left a simple teal open book topped by three connected circles suggesting a learning hub; to the right the exact wordmark "StudyHub" in a friendly bold geometric sans serif. "Study" is dark navy, "Hub" is teal. All artwork uses opaque solid colors with crisp edges. Restrained modern educational identity, balanced spacing, strong legibility. Generous white margins. No glow, no bloom, no shadows, no gradients, no lighting effects, no transparency, no tagline, no extra text, no mockup.

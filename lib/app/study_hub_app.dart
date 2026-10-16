@@ -251,11 +251,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(24, 28, 24, 4),
-          child: Text(
-            'StudyHub',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 4),
+          child: Image.asset(
+            'assets/branding/studyhub-logo.png',
+            semanticLabel: 'StudyHub',
+            height: 106,
+            fit: BoxFit.contain,
           ),
         ),
         const Padding(
@@ -555,7 +557,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 760;
         return Scaffold(
-          appBar: compact ? AppBar(title: const Text('StudyHub')) : null,
+          appBar: compact
+              ? AppBar(
+                  title: Image.asset(
+                    'assets/branding/studyhub-logo.png',
+                    semanticLabel: 'StudyHub',
+                    width: 112,
+                    height: 56,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : null,
           drawer: compact ? Drawer(child: SafeArea(child: _sidebar())) : null,
           body: SafeArea(
             child: Column(

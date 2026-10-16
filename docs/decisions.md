@@ -7,6 +7,7 @@ Keep confirmed requirements separate from proposed implementation choices. Updat
 | Topic | Decision |
 | --- | --- |
 | Framework | Build the app with Flutter. |
+| Branding | Use the white-background StudyHub logo; use its book-and-connections symbol alone for the macOS app icon. |
 | Platforms | Cross-platform direction; begin implementation on macOS. |
 | Organization | A Class contains Lectures; Lectures contain study content. Explicitly changed from the earlier hierarchy for the requested navigation prototype. |
 | Capture | Typed notes and voice input are intended; ink follows later. |
@@ -66,4 +67,4 @@ For each substantial decision, record its status, the choice, why it was made, a
 
 Use Class → Lectures → notes navigation, GUI CRUD, and simple local JSON files to make navigation playable. This explicitly supersedes the earlier Lecture → Classes terminology in the initial blueprints. Keep the notes canvas a placeholder so the prototype does not select a rich editor, capture policy, or AI integration.
 
-The implementation keeps domain data separate from Flutter UI and file storage. Stable IDs and schema version 1 provide a modest foundation without choosing a database or expanding product scope. Native macOS build/launch validation requires full Xcode; the current development machine has only Command Line Tools.
+The implementation keeps domain data separate from Flutter UI and file storage. Stable IDs and schema version 1 provide a modest foundation without choosing a database or expanding product scope. The macOS release build has passed with full Xcode installed; native window behavior and the Dock icon still need visual validation.

@@ -1,6 +1,6 @@
 # Architecture blueprint
 
-The first implementation is a small Flutter macOS navigation prototype using Class → Lectures → study content and local JSON files. The sections below distinguish that implementation from proposals for the richer learning experience.
+StudyHub implements Class → Lectures → study content with local JSON storage, macOS navigation, and an iPad ink workspace with a separate static HTML rendition. The sections below distinguish this increment from proposals for the broader learning experience. See [Ink and HTML](ink-and-html.md) for its concrete boundaries and validation commands.
 
 ## Boundaries
 
@@ -34,7 +34,7 @@ The app and external assistants should use the same content model and editing ru
 
 Content items are a proposed way to give notes and rich material stable identities. They are not a commitment to a particular editor or storage engine.
 
-Candidate content types include written notes, voice-derived material, future ink, images or diagrams, HTML learning content, and animations. Their schemas and exact representation should be selected when the editing experience is clearer.
+Candidate content types include written notes, voice-derived material, ink, images or diagrams, HTML learning content, and animations. Their schemas and exact representation should be selected when the editing experience is clearer.
 
 Design the model so that:
 
@@ -49,9 +49,11 @@ Do not make a single HTML document the implicit source of truth for every kind o
 
 ## Capture
 
-Typed input, voice input, and future ink capture should feed the shared model through editing operations. Platform adapters can provide device or operating-system capabilities without leaking those APIs into the domain model.
+The iPad adapter captures editable PencilKit source and portable PNG previews. A fixed logical width preserves stroke coordinates across rotation and Split View. Atomic snapshots bind drawing bytes, preview, exported image tiles, and a mutation counter to the same source revision. Scrolling is vertical with a hard top and at most one blank viewport below the last ink; scrolling alone cannot extend it.
 
-Voice behavior needs a product decision about dictation, recordings, transcription, retention, and processing location. Ink needs decisions about stroke storage and optional recognition. Neither requires storing raw source media by default at this stage.
+Typed editing and voice input remain future capture methods. They should feed the shared model through editing operations. Platform adapters can provide device or operating-system capabilities without leaking those APIs into the domain model.
+
+Voice behavior needs a product decision about dictation, recordings, transcription, retention, and processing location. Ink recognition is delegated to an explicitly requested enrichment; original strokes remain editable. Voice does not require storing raw source media by default at this stage.
 
 ## Canvas and rich content
 
@@ -67,7 +69,7 @@ A rendering boundary should define:
 
 Treat imported and AI-generated HTML as untrusted input. Any support for scripts, network requests, navigation, local files, or native bridges needs an explicit policy and isolation design. An embed should not gain access to the learner's full library or the app's credentials merely by appearing on the canvas.
 
-The choice of HTML renderer, animation format, and sandboxing mechanism remains open. Validate that choice on macOS and against the intended cross-platform direction before committing to it.
+The current static rendition uses native WebKit on iPad and macOS. Parsed HTML is sanitized and wrapped in a restrictive CSP; WebKit independently disables page scripts, blocks network/file loads, uses nonpersistent storage, and cancels external navigation. Inline SVG and MathML support diagrams and equations. There is no page-to-native bridge. Animation and interactive content remain future work. Renderer failure retains source and offers a readable text fallback.
 
 ## AI interoperability
 
@@ -85,15 +87,19 @@ Edits should be scoped to the learner's request, checked against the content sch
 
 Use revision checks to avoid silently overwriting content changed since an assistant read it. Exact transaction, history, and conflict-resolution mechanisms are still undecided.
 
-Integration discovery, authentication, transport, and permission UX are open questions. The goal of using a learner's own subscription must be tested against the providers' supported connection paths; this blueprint does not establish that any particular subscription can power a third-party app. Do not base the design on credential scraping, unsupported access, or an assumed API entitlement.
+The current provider boundary accepts only a confirmed Lecture snapshot and returns HTML through app-owned sanitization and revision checks. A newer source is preserved and marks an older result stale. Cancellation and failed conversion retain the previous rendition.
+
+ChatGPT uses its documented open-source subscription route with browser OAuth, PKCE, signed token validation, Keychain storage, model discovery, and streaming inference. Live account access and quality remain unverified. Claude Pro direct return requires an authenticated public connector service; that service has not been authorized or deployed. No API billing or manual import fallback is substituted. General external editing, history, and integration discovery remain proposals. Do not use credential scraping or assume subscription API entitlement.
 
 ## Persistence and privacy
 
-The navigation prototype uses local JSON storage, so learners can browse their library without an AI connection. `JsonLibraryStore` implements the `LibraryStore` boundary; `path_provider` selects the macOS application support directory. The file has `schemaVersion: 1`, Classes with nested Lectures, stable random IDs, titles, and a notes string for each Lecture.
+The navigation prototype uses local JSON storage, so learners can browse their library without an AI connection. `JsonLibraryStore` implements the `LibraryStore` boundary; `path_provider` selects the native application support directory. The file has `schemaVersion: 1`, Classes with nested Lectures, stable random IDs, titles, and a notes string for each Lecture.
 
 Writes flush a temporary file before renaming it over the library. UI state changes only after a successful save. Missing files mean a new empty library; malformed files and unsupported versions block editing without overwriting data. There is no migration, multi-process locking, automatic backup, or sync implementation. Deleting a Class cascades to its Lectures after GUI confirmation. See the [README](../README.md) for location, backup/reset guidance, and the JSON shape.
 
-This is an interim storage choice for the navigation prototype. Long-term asset storage and portability remain open.
+Per-Lecture sidecars hold versioned editable ink, a PNG preview, and optional HTML with its source revision, leaving the existing library format unchanged. Source saves are serialized within the process and reject stale/conflicting revisions. Navigation awaits pending saves; failed saves remain visible and retryable. See [Ink and HTML](ink-and-html.md) for size limits and portability tradeoffs.
+
+This is an interim storage choice. Long-term asset storage and portability remain open.
 
 Keep a persistence interface between the model and storage. Evaluate serialization, asset storage, schema migration, backup, and portable export together. Cloud sync, accounts, collaboration, and encryption policies remain undecided.
 
@@ -103,20 +109,23 @@ External AI processing should have an explicit context boundary: share only cont
 
 ```text
 lib/
-├── main.dart                   # Native path lookup and composition
-├── app/study_hub_app.dart       # Material UI, navigation, CRUD dialogs, placeholder canvas
-├── domain/library.dart         # Flutter-independent model, IDs, JSON schema validation
-└── persistence/library_store.dart # Storage interface and local JSON adapter
-test/                           # File persistence and navigation widget tests
-macos/                          # Generated Flutter macOS runner
+├── main.dart                    # Native paths, isolated development profile, composition
+├── app/                         # Library navigation and Lecture Ink / HTML workspace
+├── domain/                      # Library and versioned Lecture content
+├── persistence/                 # Atomic JSON library and per-Lecture sidecars
+├── ink/                         # Platform-independent capture interface and geometry
+├── ai/                          # Provider interface and ChatGPT subscription adapter
+└── enrichment/                  # Static HTML validation and sanitization
+ios/Runner/                      # PencilKit, isolated WebKit, browser auth and Keychain
+macos/Runner/                    # Isolated WebKit, browser auth and Keychain
+test/                            # Domain, persistence, protocol and widget tests
+integration_test/                # Native synthetic Lecture flow
 ```
 
-The prototype uses Flutter's built-in state and navigation mechanisms. Its only direct runtime package beyond Flutter is `path_provider`. Schema versioning and stable identities are implemented; structured rich-content items, external editing rules, history, and undo remain proposals. The notes canvas displays stored plain text when present and an empty-state message otherwise; editing is not implemented.
-
-Future platform adapters should keep capture, rendering, and OS capabilities behind explicit boundaries. Add other platform runners when their implementation is authorized; extract packages only when concrete reuse justifies them.
+The app uses Flutter's built-in state and navigation mechanisms. Direct runtime dependencies are `path_provider`, `html`, `crypto`, and `jose`. Rich content-item schemas, generalized external editing, history, and cross-platform ink editing remain proposals. Platform adapters remain behind explicit interfaces; packages are extracted only when concrete reuse justifies them.
 
 ## Validation
 
-The [README](../README.md) documents formatting, analysis, tests, and native build commands. Automated tests exercise persistence round trips, invalid schemas, failed writes, GUI CRUD, navigation, and error states. Widget tests do not validate the native path provider, sandbox, runner, or window behavior; build and launch on macOS with full Xcode to validate those boundaries.
+The [README](../README.md) and [Ink and HTML](ink-and-html.md) document build, test, formatting, and analysis commands. Dart tests cover persistence, revision races, provider protocols, sanitization, navigation, and narrow layouts. Native simulator tests cover PencilKit geometry/export and WebKit isolation; the synthetic full-flow test combines real native capture, storage, consent, separate HTML, staleness, and reopening.
 
-Future HTML isolation, capture, external edits, and richer content rendering require targeted tests when implemented.
+Fixtures do not establish live account access or model accuracy. Simulator strokes do not establish Pencil latency, pressure, or palm rejection. Record actual device and command evidence; keep physical Pencil acceptance and live-provider verification explicit.

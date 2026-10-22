@@ -4,7 +4,7 @@ Everyone is welcome to contribute: learners, educators, designers, developers, a
 
 Use whatever tools make you productive.
 
-StudyHub has a small macOS navigation prototype with local JSON storage. See the README for build, run, and verification commands. Feedback on learning experiences, terminology, accessibility, and architecture remains welcome; broader product scope is still open.
+StudyHub has macOS navigation and an iPad ink/HTML workspace with local JSON storage. See the README for build, run, and verification commands. Feedback on learning experiences, terminology, accessibility, and architecture remains welcome; broader product scope is still open.
 
 ## Start with shared context
 

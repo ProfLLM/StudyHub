@@ -6,12 +6,12 @@ This is the canonical repository guidance for all coding agents, including Codex
 
 Read [README.md](README.md), [the product vision](docs/product-vision.md), [the architecture](docs/architecture.md), and [the decision register](docs/decisions.md) before making substantial changes. Read [CONTRIBUTING.md](CONTRIBUTING.md) when preparing a contribution.
 
-StudyHub will be a Flutter study app. It will start on macOS and expand to other platforms. The repository contains a small macOS navigation prototype with local JSON persistence. See README.md for the toolchain and checks.
+StudyHub is a Flutter study app with macOS navigation, an iPad ink workspace, and local JSON persistence. The ink/HTML increment and provider limitations are documented in docs/ink-and-html.md. See README.md for the toolchain and checks.
 
 ## Preserve the product intent
 
 - Preserve the hierarchy **Class → Lectures → study content**. A Class contains Lectures (changed explicitly for the navigation prototype). Do not silently rename, reverse, or add levels to this hierarchy.
-- Typed notes and voice input are intended capture methods; ink is a later direction. Do not infer a V0 commitment from the long-term vision.
+- iPad ink and a separate static HTML rendition are explicitly authorized. Typed editing and voice input remain intended future capture methods. Do not infer further commitments from the long-term vision.
 - Treat the learning canvas as a core experience. Text, visuals, HTML enrichment, interactive content, and animation should be able to coexist.
 - Plan for interoperability with ChatGPT and Claude, including user-requested content edits and study plans.
 - The intent is to use the learner's own ChatGPT or Anthropic subscription. Confirm supported access paths before selecting an integration. Do not silently substitute a developer-funded service or assume that a subscription provides API credentials.

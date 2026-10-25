@@ -28,6 +28,43 @@ void main() {
   });
   tearDown(() async => directory.delete(recursive: true));
 
+  for (final orphan in [false, true]) {
+    test(
+      'deletion removes ${orphan ? 'orphan' : 'committed and'} temporary source',
+      () async {
+        await store.save(
+          ink().withHtml(
+            '<p>Private synthetic rendition</p>',
+            sourceRevision: 1,
+            provider: 'ChatGPT',
+          ),
+        );
+        final file = await sidecar();
+        final temporary = await file.copy('${file.path}.tmp');
+        if (orphan) await file.delete();
+        await store.delete('lecture-1');
+        expect(await file.exists(), isFalse);
+        expect(await temporary.exists(), isFalse);
+        expect((await store.load('lecture-1')).hasInk, isFalse);
+      },
+    );
+  }
+  test(
+    'deletion rejects unsafe temporary paths and retains outside data',
+    () async {
+      await store.save(ink());
+      final file = await sidecar();
+      final outside = File('${directory.path}/outside')
+          .writeAsString('Synthetic outside data');
+      await Link('${file.path}.tmp').create((await outside).path);
+      await expectLater(
+        store.delete('lecture-1'),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(await (await outside).readAsString(), 'Synthetic outside data');
+      expect(await file.exists(), isTrue);
+    },
+  );
   test('missing content is empty without creating any files', () async {
     final content = await store.load('lecture-1');
     expect(content.lectureId, 'lecture-1');

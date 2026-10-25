@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -16,15 +17,28 @@ final _png = base64Decode(
 
 class _Provider extends ChatGptSubscriptionProvider {
   bool connected = false;
+  bool recovery = false;
+  Completer<void>? pendingConnect;
+  @override
+  bool get connectionRecoveryRequired => recovery;
   bool noticeShown = false;
   int usageOpens = 0;
   int generations = 0;
   @override
   Future<bool> get isConnected async => connected;
   @override
-  Future<void> connect() async => connected = true;
+  Future<void> connect() async {
+    await pendingConnect?.future;
+    if (recovery) throw const ChatGptConnectionRecoveryException();
+    connected = true;
+  }
+
   @override
-  Future<void> disconnect() async => connected = false;
+  Future<void> disconnect() async {
+    connected = false;
+    recovery = false;
+  }
+
   @override
   Future<bool> get needsPlanNotice async => !noticeShown;
   @override
@@ -166,4 +180,26 @@ void main() {
     expect(provider.usageOpens, 1);
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'cleanup failure remains visible after cancel and offers disconnect',
+    (tester) async {
+      final provider = _Provider()..pendingConnect = Completer<void>();
+      await _mount(tester, provider);
+      await _tap(tester, 'Continue with ChatGPT');
+      await _tap(tester, 'Cancel connection');
+      provider.recovery = true;
+      provider.pendingConnect!.complete();
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('connection could not be cleared'),
+        findsOneWidget,
+      );
+      expect(find.text('Disconnect ChatGPT'), findsOneWidget);
+      expect(find.text('Using ChatGPT plan'), findsNothing);
+      await _tap(tester, 'Disconnect ChatGPT');
+      expect(provider.recovery, isFalse);
+      expect(find.text('Continue with ChatGPT'), findsOneWidget);
+      expect(provider.generations, 0);
+    },
+  );
 }

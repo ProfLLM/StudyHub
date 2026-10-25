@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,12 +19,14 @@ void main() {
   final preview = Uint8List.fromList([7, 8]);
   late InkCanvasController controller;
   PlatformException? initializeError;
+  Future<void>? pendingInitialization;
   PlatformException? exportError;
   Object? flushResult;
 
   setUp(() {
     controller = InkCanvasController();
     initializeError = null;
+    pendingInitialization = null;
     exportError = null;
     flushResult = {'drawing': latest, 'preview': preview, 'changeId': 1};
     created.clear();
@@ -38,6 +42,7 @@ void main() {
           commands.add(call.method);
           switch (call.method) {
             case 'initialize':
+              await pendingInitialization;
               if (initializeError != null) throw initializeError!;
               return null;
             case 'flush':
@@ -207,6 +212,51 @@ void main() {
     expect(controller.error.value, contains('invalid drawing'));
   });
 
+  inkTest('loading initialization still blocks flush and navigation', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    pendingInitialization = pending.future;
+    await tester.pumpWidget(app(drawing: initial));
+    await tester.pump();
+    expect(controller.ready.value, isFalse);
+    expect(controller.initializationFailed.value, isFalse);
+    await expectLater(controller.flush(), throwsA(isA<StateError>()));
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(controller.ready.value, isTrue);
+  });
+  inkTest(
+    'failed initial source can retry without overwriting captured source',
+    (tester) async {
+      var changes = 0;
+      initializeError = PlatformException(
+        code: 'invalidInk',
+        message: 'Original preserved',
+      );
+      await tester.pumpWidget(
+        app(drawing: initial, onChanged: (_) => changes++),
+      );
+      await tester.pumpAndSettle();
+      expect(controller.initializationFailed.value, isTrue);
+      expect(await controller.flush(), isNull);
+      expect(changes, 0);
+      initializeError = null;
+      await tester.tap(find.text('Retry opening ink'));
+      await tester.pumpAndSettle();
+      expect(created, hasLength(2));
+      final params = created.last['params'] as Uint8List;
+      final decoded = const StandardMessageCodec().decodeMessage(
+        ByteData.sublistView(params),
+      ) as Map;
+      expect(decoded['drawing'], initial);
+      expect(controller.ready.value, isTrue);
+      expect(controller.initializationFailed.value, isFalse);
+      expect(changes, 0);
+      await controller.flush();
+      expect(changes, 1);
+    },
+  );
   inkTest(
     'unreadable initial source blocks editing commands and reports error',
     (tester) async {

@@ -20,7 +20,7 @@ Ink tools include the native palette, erasing, undo, and redo. Save failures rem
 - A source revision, derived from the loaded revision plus native drawing mutations.
 - Optional static HTML, provider name, and the source revision used to create it.
 
-Source and enrichment are never the same field. Writes flush a temporary file before renaming it over the destination. In-process serialization rejects stale/conflicting source saves. Malformed files are preserved and block editing of that Lecture; a corrupt HTML rendition does not prevent opening its ink. There is no multiprocess locking or cloud synchronization.
+Source and enrichment are never the same field. Writes flush a temporary file before renaming it over the destination. In-process serialization rejects stale/conflicting source saves. Malformed files are preserved and block editing of that Lecture; a corrupt HTML rendition does not prevent opening its ink. There is no multiprocess locking or cloud synchronization. Deletion checks and removes both the exact committed sidecar and its interrupted-save `.tmp` residue under the same serialization; unsafe temporary paths or incomplete cleanup produce an error.
 
 Back up the whole application support directory, not only `library.json`. Native ink is deliberately an iPad-first choice: non-Apple editing may need a future conversion. macOS can display portable previews and HTML.
 
@@ -43,6 +43,14 @@ Claude support is deferred to [issue #6](https://github.com/ProfLLM/StudyHub/iss
 On iPad, credentials use non-synchronizing `WhenUnlockedThisDeviceOnly` Keychain records. On macOS, ChatGPT uses the standard encrypted local Keychain with an explicit calling-app ACL. Exact-item permission checks reject broad, foreign, duplicate, or changed-identity records before reading or overwriting secrets; operations suppress Keychain prompts and run on a shared background executor with completion on the UI thread. This supports ordinary local app builds without developer-device registration. No Apple account changes were made.
 
 macOS file-based Keychain backup and migration follow OS policy; this choice does not provide iOS-style `ThisDeviceOnly` guarantees. Its APIs are legacy and may need revisiting for distribution. Ad hoc code-identity changes can require disconnecting with the original app or removing only its matching provider record in Keychain Access before reconnecting. Stable signing avoids that development limitation. These choices remain revisable; see [Apple TN3137](https://developer.apple.com/documentation/technotes/tn3137-on-mac-keychains) and [calling-app ACL defaults](https://developer.apple.com/documentation/security/secaccesscreate(_:_:_:)).
+
+### Cancellation and failed source recovery
+
+Connecting preserves the exact previous session until the new attempt completes, including closing the authentication browser. If cancellation or failure happens after the session write starts, StudyHub restores the previous secure record or replaces a fresh connection with a token-free empty record. If replacement fails, it attempts exact-record deletion. This rollback applies to sign-in, not token refresh: rotating refresh credentials are retained when inference is canceled.
+
+If the OS denies both replacement and deletion (for example while locked), StudyHub blocks further use by that provider instance and displays a recovery warning even if the workspace operation was canceled. Disconnect remains available. Durable cleanup has **not** succeeded in that state: credentials can remain across process restart, so the user must unlock and disconnect locally or revoke StudyHub in ChatGPT settings. The app does not claim remote revocation or persistent erasure it could not verify.
+
+A native source that never initialized is distinct from pending or unsaved ink. Its disabled view can be left without a flush or overwrite, and normal confirmed deletion remains possible. Retry opening ink recreates the native view from the same source. Loading views and failures after editing still retain the save/navigation guards. A delayed account-status read is checked against the workspace lifetime and operation before it can open sign-in.
 
 ## Static HTML isolation
 

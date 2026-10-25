@@ -312,6 +312,186 @@ void main() {
     },
   );
 
+  for (final prior in [false, true]) {
+    test(
+      'canceled final credential write restores ${prior ? 'prior session' : 'disconnected state'} across restart',
+      () async {
+        final native = GatedSessionNative()..pauseSessionWrite = true;
+        final previous = prior ? session(now) : null;
+        if (previous != null) native.values['chatgpt.session'] = previous;
+        final provider = syntheticOAuth(native, now);
+        final connecting = provider.connect();
+        final assertion = expectLater(
+          connecting,
+          throwsA(isA<EnrichmentException>()),
+        );
+        await native.sessionWriteStarted.future;
+        provider.cancel();
+        native.releaseSessionWrite.complete();
+        await assertion;
+        if (prior) expect(native.values['chatgpt.session'], previous);
+        final restarted = ChatGptSubscriptionProvider(nativeAuth: native);
+        expect(await restarted.isConnected, prior);
+        expect(
+          native.values['chatgpt.session'] ?? '',
+          isNot(contains('new-synthetic-access')),
+        );
+      },
+    );
+  }
+  test(
+    'canceled final write remains disconnected when Keychain deletion fails',
+    () async {
+      final native = GatedSessionNative()
+        ..pauseSessionWrite = true
+        ..failDelete = true;
+      final provider = syntheticOAuth(native, now);
+      final assertion = expectLater(
+        provider.connect(),
+        throwsA(isA<EnrichmentException>()),
+      );
+      await native.sessionWriteStarted.future;
+      provider.cancel();
+      native.releaseSessionWrite.complete();
+      await assertion;
+      expect(
+        await ChatGptSubscriptionProvider(nativeAuth: native).isConnected,
+        isFalse,
+      );
+      expect(
+        native.values['chatgpt.session'] ?? '',
+        isNot(contains('new-synthetic-refresh')),
+      );
+    },
+  );
+  test(
+    'cancel while browser closes rolls back newly saved credentials',
+    () async {
+      final native = GatedSessionNative()..pauseClose = true;
+      final provider = syntheticOAuth(native, now);
+      final assertion = expectLater(
+        provider.connect(),
+        throwsA(isA<EnrichmentException>()),
+      );
+      await native.closeStarted.future;
+      provider.cancel();
+      native.releaseClose.complete();
+      await assertion;
+      expect(
+        await ChatGptSubscriptionProvider(nativeAuth: native).isConnected,
+        isFalse,
+      );
+    },
+  );
+
+  test('failed rollback write falls back to exact session deletion', () async {
+    final native = GatedSessionNative()
+      ..pauseSessionWrite = true
+      ..failRollback = true;
+    final provider = syntheticOAuth(native, now);
+    final assertion = expectLater(
+      provider.connect(),
+      throwsA(isA<EnrichmentException>()),
+    );
+    await native.sessionWriteStarted.future;
+    provider.cancel();
+    native.releaseSessionWrite.complete();
+    await assertion;
+    expect(native.values.containsKey('chatgpt.session'), isFalse);
+    expect(
+      await ChatGptSubscriptionProvider(nativeAuth: native).isConnected,
+      isFalse,
+    );
+  });
+  test(
+    'denied cleanup blocks reuse and explicitly reports residual restart risk',
+    () async {
+      final native = GatedSessionNative()
+        ..pauseSessionWrite = true
+        ..failRollback = true
+        ..failDelete = true;
+      final provider = syntheticOAuth(native, now);
+      final assertion = expectLater(
+        provider.connect(),
+        throwsA(isA<ChatGptConnectionRecoveryException>()),
+      );
+      await native.sessionWriteStarted.future;
+      provider.cancel();
+      native.releaseSessionWrite.complete();
+      await assertion;
+      expect(provider.connectionRecoveryRequired, isTrue);
+      expect(await provider.isConnected, isFalse);
+      await expectLater(
+        provider.connect(),
+        throwsA(isA<ChatGptConnectionRecoveryException>()),
+      );
+      // If the OS denies every durable cleanup, the record really remains.
+      // A process-local guard cannot promise it was erased across restart.
+      expect(
+        await ChatGptSubscriptionProvider(nativeAuth: native).isConnected,
+        isTrue,
+      );
+      native.failDelete = false;
+      await expectLater(
+        provider.disconnect(),
+        throwsA(isA<EnrichmentException>()),
+      );
+      expect(provider.connectionRecoveryRequired, isFalse);
+      expect(
+        await ChatGptSubscriptionProvider(nativeAuth: native).isConnected,
+        isFalse,
+      );
+    },
+  );
+  test(
+    'cancellation during refresh retains replacement rotating credentials',
+    () async {
+      final native = GatedSessionNative()..pauseSessionWrite = true;
+      native.values['chatgpt.session'] = session(
+        now.subtract(const Duration(hours: 2)),
+      );
+      var inferenceRequests = 0;
+      final provider = ChatGptSubscriptionProvider(
+        nativeAuth: native,
+        now: () => now,
+        transport: FakeTransport((_, uri, _, _) async {
+          if (uri.path.endsWith('/token')) {
+            return jsonResponse({
+              'access_token': 'rotated-synthetic-access',
+              'refresh_token': 'rotated-synthetic-refresh',
+              'scope': 'chatgpt.tokens.use.direct',
+              'expires_in': 3600,
+            });
+          }
+          inferenceRequests++;
+          return sseResponse();
+        }),
+      );
+      final assertion = expectLater(
+        provider.generate(
+          images: [
+            Uint8List.fromList([1]),
+          ],
+          lectureTitle: 'Synthetic',
+          sourceNotes: '',
+        ),
+        throwsA(isA<EnrichmentException>()),
+      );
+      await native.sessionWriteStarted.future;
+      provider.cancel();
+      native.releaseSessionWrite.complete();
+      await assertion;
+      expect(inferenceRequests, 0);
+      expect(
+        jsonDecode(native.values['chatgpt.session']!)['refresh_token'],
+        'rotated-synthetic-refresh',
+      );
+      expect(
+        await ChatGptSubscriptionProvider(nativeAuth: native).isConnected,
+        isTrue,
+      );
+    },
+  );
   test(
     'full OAuth loopback registration validates identity before saving',
     () async {
@@ -787,4 +967,88 @@ class FakeTransport extends ChatGptTransport {
   }) => handler(method, uri, headers, body);
   @override
   void cancel() {}
+}
+
+// Only synthetic tokens and the loopback callback are used by these races.
+ChatGptSubscriptionProvider syntheticOAuth(FakeNative native, DateTime now) {
+  late String nonce;
+  native.open = (url) async {
+    final query = Uri.parse(url).queryParameters;
+    nonce = query['nonce']!;
+    final target = Uri.parse(query['redirect_uri']!).replace(
+      queryParameters: {
+        'state': query['state']!,
+        'client_id': 'oaiapp_test',
+        'code': 'synthetic-code',
+      },
+    );
+    final client = HttpClient();
+    try {
+      await (await (await client.getUrl(target)).close()).drain<void>();
+    } finally {
+      client.close(force: true);
+    }
+  };
+  return ChatGptSubscriptionProvider(
+    nativeAuth: native,
+    now: () => now,
+    transport: FakeTransport(
+      (_, uri, _, _) async => jsonResponse(
+        uri.path.endsWith('/jwks.json')
+            ? {'keys': []}
+            : {
+                'access_token': 'new-synthetic-access',
+                'refresh_token': 'new-synthetic-refresh',
+                'id_token': 'synthetic-id',
+                'scope': 'chatgpt.tokens.use.direct',
+                'expires_in': 3600,
+              },
+      ),
+    ),
+    verifyIdToken: (_, _) async => {
+      'iss': 'https://auth.openai.com',
+      'aud': 'oaiapp_test',
+      'sub': 'synthetic',
+      'nonce': nonce,
+      'exp': now.millisecondsSinceEpoch ~/ 1000 + 3600,
+    },
+  );
+}
+
+class GatedSessionNative extends FakeNative {
+  final sessionWriteStarted = Completer<void>();
+  final releaseSessionWrite = Completer<void>();
+  final closeStarted = Completer<void>();
+  final releaseClose = Completer<void>();
+  bool pauseSessionWrite = false;
+  bool pauseClose = false;
+  bool failDelete = false;
+  bool failRollback = false;
+  int sessionWrites = 0;
+  @override
+  Future<void> writeSecure(String key, String value) async {
+    if (key == 'chatgpt.session') {
+      sessionWrites++;
+      if (sessionWrites == 1) {
+        sessionWriteStarted.complete();
+        if (pauseSessionWrite) await releaseSessionWrite.future;
+      } else if (failRollback) {
+        throw StateError('Synthetic rollback write denied');
+      }
+    }
+    await super.writeSecure(key, value);
+  }
+
+  @override
+  Future<void> closeAuth() async {
+    if (!closeStarted.isCompleted) closeStarted.complete();
+    if (pauseClose) await releaseClose.future;
+    await super.closeAuth();
+  }
+
+  @override
+  Future<void> deleteSecure(String key) async {
+    if (failDelete) throw StateError('Synthetic Keychain deletion denied');
+    await super.deleteSecure(key);
+  }
 }

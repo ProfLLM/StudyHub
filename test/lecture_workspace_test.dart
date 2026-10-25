@@ -108,6 +108,7 @@ class _Provider implements LectureEnrichmentProvider {
   Future<void>? pendingDisconnect;
   Object? disconnectFailure;
   bool connected = true;
+  Future<bool>? pendingConnectionStatus;
   int connects = 0;
   int calls = 0;
   int cancels = 0;
@@ -116,7 +117,7 @@ class _Provider implements LectureEnrichmentProvider {
   String? receivedNotes;
 
   @override
-  Future<bool> get isConnected async => connected;
+  Future<bool> get isConnected async => pendingConnectionStatus ?? connected;
 
   @override
   Future<void> connect() async {
@@ -743,4 +744,36 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+  for (final leave in [false, true]) {
+    testWidgets(
+      'canceled conversion never starts sign-in after delayed status (${leave ? 'disposed' : 'cancel'})',
+      (tester) async {
+        final status = Completer<bool>();
+        final provider = _Provider();
+        final store = _MemoryStore(_ink());
+        await _mount(
+          tester,
+          store: store,
+          ink: _InkController(),
+          providers: [provider],
+        );
+        provider.pendingConnectionStatus = status.future;
+        await _send(tester);
+        expect(provider.connects, 0);
+        if (leave) {
+          await tester.pumpWidget(const SizedBox.shrink());
+        } else {
+          await tester.tap(find.text('Cancel conversion'));
+          await _advance(tester);
+        }
+        expect(provider.cancels, 1);
+        status.complete(false);
+        await _advance(tester);
+        expect(provider.connects, 0);
+        expect(provider.calls, 0);
+        expect(store.content.hasHtml, isFalse);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

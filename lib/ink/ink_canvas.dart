@@ -70,6 +70,7 @@ class InkSnapshot extends InkDrawingUpdate {
 class InkCanvasController {
   final ValueNotifier<bool> ready = ValueNotifier(false);
   final ValueNotifier<String?> error = ValueNotifier(null);
+  final ValueNotifier<bool> initializationFailed = ValueNotifier(false);
   MethodChannel? _channel;
   ValueChanged<InkDrawingUpdate>? _onChanged;
   bool _disposed = false;
@@ -82,6 +83,7 @@ class InkCanvasController {
     _channel = channel;
     _onChanged = onChanged;
     ready.value = false;
+    initializationFailed.value = false;
     error.value = null;
   }
 
@@ -90,6 +92,7 @@ class InkCanvasController {
     _channel = null;
     _onChanged = null;
     ready.value = false;
+    initializationFailed.value = false;
   }
 
   void _report(Object exception) {
@@ -118,6 +121,10 @@ class InkCanvasController {
 
   Future<InkDrawingUpdate?> flush() async {
     if (_channel == null) return null;
+    // Native input is disabled when the initial source could not be opened.
+    // Nothing from that view can be dirty; keep the original file untouched.
+    // A view still loading, or one with a later command failure, must flush.
+    if (initializationFailed.value && !ready.value) return null;
     final value = await _invoke<Object>('flush');
     try {
       final update = InkDrawingUpdate.fromPlatform(value);
@@ -178,6 +185,7 @@ class InkCanvasController {
     _onChanged = null;
     ready.dispose();
     error.dispose();
+    initializationFailed.dispose();
   }
 }
 
@@ -201,6 +209,7 @@ class InkCanvas extends StatefulWidget {
 
 class _InkCanvasState extends State<InkCanvas> with WidgetsBindingObserver {
   MethodChannel? _channel;
+  int _attempt = 0;
 
   @override
   void initState() {
@@ -236,10 +245,12 @@ class _InkCanvasState extends State<InkCanvas> with WidgetsBindingObserver {
     try {
       await channel.invokeMethod<void>('initialize');
       if (mounted && channel == _channel) {
+        widget.controller.initializationFailed.value = false;
         widget.controller.ready.value = true;
       }
     } catch (exception) {
       if (mounted && channel == _channel) {
+        widget.controller.initializationFailed.value = true;
         widget.controller._report(exception);
       }
     }
@@ -259,7 +270,9 @@ class _InkCanvasState extends State<InkCanvas> with WidgetsBindingObserver {
       try {
         switch (call.method) {
           case 'drawingChanged':
-            widget.onChanged(InkDrawingUpdate.fromPlatform(call.arguments));
+            if (widget.controller.ready.value) {
+              widget.onChanged(InkDrawingUpdate.fromPlatform(call.arguments));
+            }
           case 'inkError':
             widget.controller._report(
               PlatformException(
@@ -301,13 +314,27 @@ class _InkCanvasState extends State<InkCanvas> with WidgetsBindingObserver {
                   color: Theme.of(context).colorScheme.errorContainer,
                   child: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: Text(error, semanticsLabel: 'Ink error: $error'),
+                    child: Column(
+                      children: [
+                        Text(error, semanticsLabel: 'Ink error: $error'),
+                        if (widget.controller.initializationFailed.value)
+                          TextButton(
+                            onPressed: () {
+                              widget.controller.initializationFailed.value =
+                                  false;
+                              widget.controller.error.value = null;
+                              setState(() => _attempt++);
+                            },
+                            child: const Text('Retry opening ink'),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
         ),
         Expanded(
           child: UiKitView(
-            key: ValueKey('ink-${widget.lectureId}'),
+            key: ValueKey('ink-${widget.lectureId}-$_attempt'),
             viewType: 'studyhub/ink',
             creationParams: {
               'lectureId': widget.lectureId,

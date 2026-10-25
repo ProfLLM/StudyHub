@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../ai/chatgpt_subscription_provider.dart'
-    show ChatGptSubscriptionProvider;
+    show ChatGptSubscriptionProvider, ChatGptConnectionRecoveryException;
 import '../ai/lecture_enrichment_provider.dart';
 import '../domain/lecture_content.dart';
 import '../domain/library.dart';
@@ -57,6 +57,11 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
   LectureEnrichmentProvider? _activeProvider;
 
   bool get _accountBusy => _connecting || _disconnecting;
+  bool get _accountRecoveryRequired =>
+      widget.providers.isNotEmpty &&
+      widget.providers[_providerIndex] is ChatGptSubscriptionProvider &&
+      (widget.providers[_providerIndex] as ChatGptSubscriptionProvider)
+          .connectionRecoveryRequired;
 
   @override
   void initState() {
@@ -85,6 +90,9 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
         _connected = connected;
         if (content.hasHtml && html == null) {
           _message = 'The saved HTML could not be opened safely. Your ink is available; create HTML again to replace it.';
+        }
+        if (_accountRecoveryRequired) {
+          _message = const ChatGptConnectionRecoveryException().message;
         }
       });
     } catch (_) {
@@ -242,8 +250,13 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
         });
       }
     } on EnrichmentException catch (error) {
-      if (mounted && operation == _operation) {
-        setState(() => _message = error.message);
+      if (mounted &&
+          (operation == _operation ||
+              error is ChatGptConnectionRecoveryException)) {
+        setState(() {
+          _message = error.message;
+          if (error is ChatGptConnectionRecoveryException) _connected = false;
+        });
       }
     } catch (_) {
       if (mounted && operation == _operation) {
@@ -406,7 +419,9 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
         ),
       );
       if (send != true || !mounted || operation != _operation) return;
-      if (!await provider.isConnected) {
+      final connected = await provider.isConnected;
+      if (!mounted || operation != _operation) return;
+      if (!connected) {
         await provider.connect();
       }
       if (!await _showPlanNotice(provider, operation)) return;
@@ -432,8 +447,13 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
       _enqueueSave(next);
       await _saveTail;
     } on EnrichmentException catch (error) {
-      if (mounted && operation == _operation) {
-        setState(() => _message = error.message);
+      if (mounted &&
+          (operation == _operation ||
+              error is ChatGptConnectionRecoveryException)) {
+        setState(() {
+          _message = error.message;
+          if (error is ChatGptConnectionRecoveryException) _connected = false;
+        });
       }
     } on FormatException {
       if (mounted && operation == _operation) {
@@ -579,7 +599,7 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
                             OutlinedButton(
                               onPressed: _generating || _accountBusy
                                   ? null
-                                  : _connected
+                                  : _connected || _accountRecoveryRequired
                                   ? _disconnect
                                   : _connect,
                               child: Text(
@@ -587,7 +607,7 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
                                     ? 'Disconnecting…'
                                     : _connecting
                                     ? 'Connecting…'
-                                    : _connected
+                                    : _connected || _accountRecoveryRequired
                                     ? 'Disconnect ${widget.providers[_providerIndex].name}'
                                     : widget.providers[_providerIndex]
                                           is ChatGptSubscriptionProvider
@@ -621,6 +641,7 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
                                         ready &&
                                             !_generating &&
                                             !_accountBusy &&
+                                            !_accountRecoveryRequired &&
                                             !_saveFailed
                                         ? _generate
                                         : null,

@@ -111,7 +111,12 @@ class JsonLectureContentStore implements LectureContentStore {
   Future<void> delete(String lectureId) {
     final file = _file(lectureId);
     return _serialized(file, () async {
+      final temporary = File('${file.path}.tmp');
+      // Check both paths before deleting either. Never follow a residue link
+      // or report success while an interrupted save still contains source.
       await _checkFileType(file);
+      await _checkFileType(temporary);
+      if (await temporary.exists()) await temporary.delete();
       if (await file.exists()) await file.delete();
     });
   }

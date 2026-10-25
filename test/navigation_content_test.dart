@@ -104,12 +104,14 @@ void main() {
   late _LibraryStore library;
   late _ContentStore notes;
   var failFlush = false;
+  var failInitialize = false;
 
   setUp(() {
     events = [];
     library = _LibraryStore(events);
     notes = _ContentStore(events);
     failFlush = false;
+    failInitialize = false;
     sources.clear();
     activity.clear();
     nativeChannels.clear();
@@ -127,6 +129,12 @@ void main() {
         'changeId': 0,
       };
       messenger.setMockMethodCallHandler(channel, (command) async {
+        if (command.method == 'initialize' && failInitialize) {
+          throw PlatformException(
+            code: 'invalidInk',
+            message: 'Synthetic corrupt PKDrawing',
+          );
+        }
         if (command.method == 'setActive') {
           activity.add(command.arguments as bool);
         }
@@ -314,6 +322,7 @@ void main() {
     expect(find.textContaining('Could not finish saving'), findsOneWidget);
     expect(notes.saveCalls, 0);
     failFlush = false;
+    failInitialize = false;
     await tester.tap(find.widgetWithText(ListTile, 'History'));
     await tester.pumpAndSettle();
     expect(find.text('Dates'), findsOneWidget);
@@ -458,4 +467,38 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  navigationTest(
+    'failed native initialization allows navigation without overwriting source',
+    (tester) async {
+      failInitialize = true;
+      await mount(tester);
+      await openMotion(tester);
+      expect(find.text('Synthetic corrupt PKDrawing'), findsOneWidget);
+      await tester.tap(find.widgetWithText(ListTile, 'History'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LectureWorkspace), findsNothing);
+      expect(notes.saveCalls, 0);
+      expect(notes.deleted, isEmpty);
+      expect(notes.content['motion']!.drawing, [1]);
+      expect(library.saves, 0);
+    },
+  );
+  for (final target in ['Lecture actions: Motion', 'Class actions: Physics']) {
+    navigationTest(
+      'failed native initialization permits confirmed deletion: $target',
+      (tester) async {
+        failInitialize = true;
+        await mount(tester);
+        await openMotion(tester);
+        await confirmDelete(tester, target);
+        await tester.pumpAndSettle();
+        expect(find.byType(LectureWorkspace), findsNothing);
+        expect(library.saves, 1);
+        expect(notes.saveCalls, 0);
+        expect(notes.deleted, contains('motion'));
+        expect(notes.content.containsKey('motion'), isFalse);
+        expect(notes.content['dates']!.drawing, [1]);
+      },
+    );
+  }
 }

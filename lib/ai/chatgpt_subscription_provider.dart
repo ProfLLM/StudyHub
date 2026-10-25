@@ -24,6 +24,15 @@ abstract class ChatGptNativeAuth {
       Future.error(UnsupportedError('ChatGPT usage settings are unavailable.'));
 }
 
+/// The OS refused both rollback and removal. Do not hide this behind a
+/// canceled workspace operation: the learner needs an explicit recovery path.
+class ChatGptConnectionRecoveryException extends EnrichmentException {
+  const ChatGptConnectionRecoveryException()
+    : super(
+        'The ChatGPT connection could not be cleared. Unlock this device and use Disconnect ChatGPT. If that fails, disconnect StudyHub in ChatGPT settings; this device may still contain the connection.',
+      );
+}
+
 class MethodChannelChatGptAuth extends ChatGptNativeAuth {
   MethodChannelChatGptAuth() {
     _channel.setMethodCallHandler((call) async {
@@ -120,6 +129,8 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
   final Duration generationTimeout;
   bool _busy = false;
   bool _signingOut = false;
+  bool _connectionRecoveryRequired = false;
+  bool get connectionRecoveryRequired => _connectionRecoveryRequired;
   Completer<void>? _cancellation;
   Completer<void>? _operationDone;
   static const _resource = 'https://api.openai.com/v1';
@@ -136,6 +147,7 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
 
   @override
   Future<bool> get isConnected async {
+    if (_connectionRecoveryRequired) return false;
     final session = await _read(_sessionKey);
     return session?['access_token'] is String &&
         session?['refresh_token'] is String &&
@@ -182,7 +194,9 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
     final value = await _native.readSecure(key);
     if (value == null) return null;
     try {
-      return Map<String, dynamic>.from(jsonDecode(value) as Map);
+      final decoded = Map<String, dynamic>.from(jsonDecode(value) as Map);
+      // An empty secure record is an inert rollback tombstone, with no tokens.
+      return decoded.isEmpty ? null : decoded;
     } on FormatException {
       throw const EnrichmentException(
         'Saved ChatGPT connection is unreadable. Reconnect ChatGPT.',
@@ -191,6 +205,9 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
   }
 
   Future<T> _operation<T>(Future<T> Function() action) async {
+    if (_connectionRecoveryRequired) {
+      throw const ChatGptConnectionRecoveryException();
+    }
     if (_busy || _signingOut) {
       throw const EnrichmentException('A ChatGPT request is already running.');
     }
@@ -222,6 +239,8 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
   @override
   Future<void> connect() => _operation(() async {
     final cancellation = _cancellation!;
+    final previousSession = await _native.readSecure(_sessionKey);
+    _ensureActive();
     final registration = await _read(_registrationKey) ?? <String, dynamic>{};
     _ensureActive();
     final host = registration['host_id'] as String? ?? _hostId();
@@ -249,6 +268,9 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
       }
       await request.response.close();
     });
+    var sessionWriteStarted = false;
+    var bodySucceeded = false;
+    var closeSucceeded = false;
     try {
       final authorization = Uri.parse('$_issuer/api/accounts/authorize')
           .replace(
@@ -341,17 +363,54 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
       }
       registration['needs_plan_consent'] = false;
       await _native.writeSecure(_registrationKey, jsonEncode(registration));
+      sessionWriteStarted = true;
       await _saveTokens(
         tokens,
         result.clientId,
         subject: claims['sub'] as String,
       );
+      _ensureActive();
+      bodySucceeded = true;
     } finally {
-      await subscription.cancel();
-      await listener.close(force: true);
-      await _native.closeAuth();
+      try {
+        try {
+          await subscription.cancel();
+        } finally {
+          try {
+            await listener.close(force: true);
+          } finally {
+            await _native.closeAuth();
+          }
+        }
+        // Closing the browser is asynchronous too. Commit only after its last
+        // cancellation boundary; no awaited work remains after this check.
+        _ensureActive();
+        closeSucceeded = true;
+      } finally {
+        if (sessionWriteStarted && (!bodySucceeded || !closeSucceeded)) {
+          await _rollbackConnection(previousSession);
+        }
+      }
     }
   });
+
+  Future<void> _rollbackConnection(String? previousSession) async {
+    _connectionRecoveryRequired = true;
+    try {
+      // Replacing with a token-free tombstone also works when deletion is
+      // denied. A pre-existing legitimate connection is restored byte-for-byte.
+      await _native.writeSecure(_sessionKey, previousSession ?? '{}');
+    } catch (_) {
+      try {
+        await _native.deleteSecure(_sessionKey);
+      } catch (_) {
+        // If the OS denies every cleanup, persistent credentials may remain.
+        // Block this provider and surface that fact instead of claiming logout.
+        throw const ChatGptConnectionRecoveryException();
+      }
+    }
+    _connectionRecoveryRequired = false;
+  }
 
   Future<void> _saveTokens(
     Map<String, dynamic> tokens,
@@ -594,6 +653,7 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
       revoked = false;
     } finally {
       await _native.deleteSecure(_sessionKey);
+      _connectionRecoveryRequired = false;
     }
     if (!revoked) {
       throw const EnrichmentException(

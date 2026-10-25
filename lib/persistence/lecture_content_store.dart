@@ -87,6 +87,20 @@ class JsonLectureContentStore implements LectureContentStore {
     return _serialized(file, () async {
       // Loading first protects unknown or damaged files from being overwritten.
       final current = await _load(file, content.lectureId);
+      for (final previous in current.assignments) {
+        final matching = content.assignments.where((a) => a.id == previous.id);
+        if (matching.isEmpty ||
+            matching.single.html != previous.html ||
+            matching.single.request != previous.request ||
+            matching.single.sourceRevision != previous.sourceRevision ||
+            matching.single.answerRevision < previous.answerRevision ||
+            matching.single.answerRevision == previous.answerRevision &&
+                matching.single.answersJson != previous.answersJson) {
+          throw StateError(
+            'A newer or conflicting assignment is already saved.',
+          );
+        }
+      }
       if (content.inkRevision < current.inkRevision ||
           content.inkRevision == current.inkRevision &&
               (!_sameBytes(content.drawing, current.drawing) ||

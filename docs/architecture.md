@@ -1,6 +1,6 @@
 # Architecture blueprint
 
-StudyHub implements Class → Lectures → study content with local JSON storage, macOS navigation, and an iPad ink workspace with a separate static HTML rendition. The sections below distinguish this increment from proposals for the broader learning experience. See [Ink and HTML](ink-and-html.md) for its concrete boundaries and validation commands.
+StudyHub implements Class → Lectures → study content with local JSON storage, macOS navigation, and an iPad ink workspace with a separate static HTML rendition, and isolated interactive Lecture assignments. The sections below distinguish this increment from proposals for the broader learning experience. See [Ink and HTML](ink-and-html.md) for its concrete boundaries and validation commands.
 
 ## Boundaries
 
@@ -69,7 +69,11 @@ A rendering boundary should define:
 
 Treat imported and AI-generated HTML as untrusted input. Any support for scripts, network requests, navigation, local files, or native bridges needs an explicit policy and isolation design. An embed should not gain access to the learner's full library or the app's credentials merely by appearing on the canvas.
 
-The current static rendition uses native WebKit on iPad and macOS. Parsed HTML is sanitized and wrapped in a restrictive CSP; WebKit independently disables page scripts, blocks network/file loads, uses nonpersistent storage, and cancels external navigation. Inline SVG and MathML support diagrams and equations. There is no page-to-native bridge. Animation and interactive content remain future work. Renderer failure retains source and offers a readable text fallback.
+The current static rendition uses native WebKit on iPad and macOS. Parsed HTML is sanitized and wrapped in a restrictive CSP; WebKit independently disables page scripts, blocks network/file loads, uses nonpersistent storage, and cancels external navigation. Inline SVG and MathML support diagrams and equations. That static renderer has no page-to-native bridge. Renderer failure retains source and offers a readable text fallback.
+
+Lecture assignments use a separate interactive renderer: an app-owned host embeds generated HTML in a sandboxed, opaque-origin iframe. Nonce-based CSPs and native resource/navigation policies block network and file access. A main-frame-only native bridge accepts bounded answer JSON for the selected assignment; it exposes no provider calls, credentials, library access or navigation. Runtime adapters autosave form controls, custom JSON state and PNG ink canvases. Explicit app-owned review captures a saved answer revision and sends ink as images to ChatGPT; static feedback is attached to that revision, never applied over answers. See [Lecture assignments](assignments.md).
+
+Class generation uses one prompt-only request and a validated draft containing a Class title and complete HTML lessons. The app owns all new IDs. Each lesson is sanitized through the static rendering boundary and gets a text rendition for assignment context. New Lecture sidecars are staged before an atomic library save exposes the entire Class. Failure cleanup targets only newly allocated IDs; an interrupted staging operation can leave unreachable sidecars. No new schema or storage engine is introduced. See [Class generation](class-generation.md).
 
 ## AI interoperability
 
@@ -101,7 +105,11 @@ Per-Lecture sidecars hold versioned editable ink, a PNG preview, and optional HT
 
 Connection credentials stay in OS Keychain, separate from Lecture files. iPad uses device-only records; macOS uses encrypted local Keychain with calling-app ACL validation, allowing ordinary builds without developer-device registration. macOS backup and code-signing tradeoffs are documented in [Ink and HTML](ink-and-html.md).
 
+Adding an assignment upgrades only that Lecture sidecar to schema v2. This version reads both v1 and v2; older builds reject v2. Assignment HTML and identity remain fixed while answers and feedback have separate revision metadata. Stale writes cannot discard assignments or newer answers. The library schema stays v1.
+
 This is an interim storage choice. Long-term asset storage and portability remain open.
+
+The [schema and persistence plan](data-persistence-plan.html) proposes the next durable local store: SQLite with binary assets, explicit source/answer snapshots, consistent backup, and a staged migration from JSON. It is a design for review, not an implemented or approved storage change; the capacity budget and detailed cleanup/backup policies still need approval. On October 24, 2026, the owner confirmed local storage first, with synchronization outside this increment, and bounded source notes/ink and answer snapshots so the basis of new assignments and reviews remains inspectable.
 
 Keep a persistence interface between the model and storage. Evaluate serialization, asset storage, schema migration, backup, and portable export together. Cloud sync, accounts, collaboration, and encryption policies remain undecided.
 

@@ -21,5 +21,8 @@ import UIKit
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "StudyHubHtml") {
       registrar.register(StudyHtmlFactory(messenger: registrar.messenger()), withId: "studyhub/html")
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "StudyHubAssignment") {
+      registrar.register(StudyAssignmentFactory(messenger: registrar.messenger()), withId: "studyhub/assignment")
+    }
   }
 }

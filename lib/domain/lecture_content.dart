@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'lecture_assignment.dart';
+
 /// Editable source ink and a separate, optional enrichment of one ink revision.
 class LectureContent {
   LectureContent({
@@ -11,9 +13,18 @@ class LectureContent {
     this.html,
     this.htmlSourceRevision,
     this.htmlProvider,
+    List<LectureAssignment> assignments = const [],
   }) : _drawing = drawing == null ? null : Uint8List.fromList(drawing),
-       _preview = preview == null ? null : Uint8List.fromList(preview) {
+       _preview = preview == null ? null : Uint8List.fromList(preview),
+       assignments = List.unmodifiable(assignments) {
     validateLectureId(lectureId);
+    final ids = <String>{};
+    if (assignments.length > 20 ||
+        assignments.any(
+          (a) => !ids.add(a.id) || a.sourceRevision > inkRevision,
+        )) {
+      throw ArgumentError('Invalid lecture assignments.');
+    }
     if (inkRevision < 0 || (drawing == null) != (preview == null)) {
       throw ArgumentError('Ink requires a revision, drawing, and preview.');
     }
@@ -56,6 +67,7 @@ class LectureContent {
   final String? html;
   final int? htmlSourceRevision;
   final String? htmlProvider;
+  final List<LectureAssignment> assignments;
 
   // Callers cannot modify an existing content snapshot through its byte buffers.
   Uint8List? get drawing =>
@@ -83,6 +95,7 @@ class LectureContent {
     html: html,
     htmlSourceRevision: htmlSourceRevision,
     htmlProvider: htmlProvider,
+    assignments: assignments,
   );
 
   LectureContent withHtml(
@@ -97,10 +110,26 @@ class LectureContent {
     html: html,
     htmlSourceRevision: sourceRevision,
     htmlProvider: provider,
+    assignments: assignments,
+  );
+
+  LectureContent withAssignment(LectureAssignment assignment) => LectureContent(
+    lectureId: lectureId,
+    inkRevision: inkRevision,
+    drawing: _drawing,
+    preview: _preview,
+    html: html,
+    htmlSourceRevision: htmlSourceRevision,
+    htmlProvider: htmlProvider,
+    assignments: [
+      for (final current in assignments)
+        if (current.id == assignment.id) assignment else current,
+      if (!assignments.any((a) => a.id == assignment.id)) assignment,
+    ],
   );
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
+    'schemaVersion': assignments.isEmpty ? 1 : 2,
     'lectureId': lectureId,
     'inkRevision': inkRevision,
     'drawing': _drawing == null ? null : base64Encode(_drawing),
@@ -108,11 +137,14 @@ class LectureContent {
     'html': html,
     'htmlSourceRevision': htmlSourceRevision,
     'htmlProvider': htmlProvider,
+    if (assignments.isNotEmpty)
+      'assignments': assignments.map((a) => a.toJson()).toList(),
   };
 
   factory LectureContent.fromJson(Map<String, dynamic> json) {
     try {
-      if (json['schemaVersion'] is! int || json['schemaVersion'] != 1) {
+      if (json['schemaVersion'] is! int ||
+          json['schemaVersion'] != 1 && json['schemaVersion'] != 2) {
         throw const FormatException('Unsupported lecture content version.');
       }
       Uint8List? bytes(String key, int limit) {
@@ -132,6 +164,14 @@ class LectureContent {
         html: json['html'] as String?,
         htmlSourceRevision: json['htmlSourceRevision'] as int?,
         htmlProvider: json['htmlProvider'] as String?,
+        assignments: json['schemaVersion'] == 2
+            ? (json['assignments'] as List)
+                  .map(
+                    (a) =>
+                        LectureAssignment.fromJson(a as Map<String, dynamic>),
+                  )
+                  .toList()
+            : const [],
       );
     } on ArgumentError {
       throw const FormatException('Invalid lecture content.');

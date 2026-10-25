@@ -93,6 +93,133 @@ Future<String> _generate(ChatGptSubscriptionProvider provider) =>
     );
 
 void main() {
+  test('HTTP transport preserves Unicode JSON request bodies', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final body = jsonEncode({
+      'instructions': 'Create 4–8 lessons with ∑, café and 日本語.',
+    });
+    final received = Completer<String>();
+    server.listen((request) async {
+      received.complete(await utf8.decoder.bind(request).join());
+      request.response.write('{}');
+      await request.response.close();
+    });
+    final transport = IoChatGptTransport();
+    try {
+      final response = await transport.request(
+        'POST',
+        Uri.parse('http://127.0.0.1:${server.port}/responses'),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+      await response.body.drain<void>();
+      expect(await received.future, body);
+    } finally {
+      transport.cancel();
+      await server.close(force: true);
+    }
+  });
+  test(
+    'failure messages identify stages without leaking exception details',
+    () async {
+      for (final streamFailure in [false, true]) {
+        final native = _Native()..values['chatgpt.session'] = _session();
+        final provider = ChatGptSubscriptionProvider(
+          nativeAuth: native,
+          now: () => _now,
+          transport: _Transport((method, uri, headers, body) async {
+            if (!streamFailure) {
+              throw const SocketException('PRIVATE TOKEN AND PROMPT');
+            }
+            if (uri.path.endsWith('/models')) return _models();
+            return ChatGptHttpResponse(
+              200,
+              Stream.error(const FormatException('PRIVATE RESPONSE')),
+            );
+          }),
+        );
+        await expectLater(
+          provider.generateClass(request: 'Synthetic goal'),
+          throwsA(
+            isA<EnrichmentException>()
+                .having(
+                  (e) => e.message,
+                  'stage',
+                  contains(
+                    streamFailure
+                        ? 'receiving generated content'
+                        : 'loading account models',
+                  ),
+                )
+                .having(
+                  (e) => e.message,
+                  'privacy',
+                  isNot(contains('PRIVATE')),
+                ),
+          ),
+        );
+      }
+    },
+  );
+  test(
+    'assignments and handwritten review share the authorized streaming route',
+    () async {
+      final native = _Native()..values['chatgpt.session'] = _session();
+      final requests = <Map<String, dynamic>>[];
+      final transport = _Transport((method, uri, headers, body) async {
+        if (uri.path.endsWith('/models')) return _models();
+        expect(uri.toString(), 'https://api.openai.com/v1/responses');
+        expect(headers['Authorization'], 'Bearer fixture-access');
+        requests.add(jsonDecode(body!) as Map<String, dynamic>);
+        return _complete();
+      });
+      final provider = ChatGptSubscriptionProvider(
+        nativeAuth: native,
+        transport: transport,
+        now: () => _now,
+      );
+      expect(
+        await provider.createAssignment(
+          images: [],
+          lectureTitle: 'Physics',
+          sourceNotes: 'F=ma',
+          request: 'Help with reasoning',
+        ),
+        contains('Complete'),
+      );
+      expect(
+        await provider.reviewAssignment(
+          images: [
+            Uint8List.fromList([1, 2, 3]),
+          ],
+          lectureTitle: 'Physics',
+          sourceNotes: 'F=ma',
+          assignmentHtml: '<p>Explain</p>',
+          answersJson: '{"ink":{"attachedImage":1}}',
+        ),
+        contains('Complete'),
+      );
+      expect(requests[0]['instructions'], assignmentInstructions);
+      expect(requests[1]['instructions'], assignmentReviewInstructions);
+      await provider.generateClass(request: 'Teach me mechanics');
+      expect(requests[2]['instructions'], classGenerationInstructions);
+      final classInput =
+          ((requests[2]['input'] as List).single as Map)['content'] as List;
+      expect(classInput, hasLength(1));
+      expect(
+        (classInput.single as Map)['text'],
+        jsonEncode({'learningRequest': 'Teach me mechanics'}),
+      );
+      for (final request in requests) {
+        expect(request['store'], false);
+        expect(request['stream'], true);
+      }
+      final content =
+          ((requests[1]['input'] as List).single as Map)['content'] as List;
+      expect((content[1] as Map)['image_url'], 'data:image/png;base64,AQID');
+    },
+  );
+
   test('sign-out excludes new inference while revocation is pending', () async {
     final native = _Native()..values['chatgpt.session'] = _session();
     final discovery = Completer<ChatGptHttpResponse>();

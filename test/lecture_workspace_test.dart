@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studyhub/ai/lecture_enrichment_provider.dart';
+import 'package:studyhub/ai/lecture_assignment_provider.dart';
+import 'package:studyhub/app/assignment_view.dart';
 import 'package:studyhub/app/lecture_workspace.dart';
 import 'package:studyhub/domain/lecture_content.dart';
 import 'package:studyhub/domain/library.dart';
@@ -152,6 +154,50 @@ class _Provider implements LectureEnrichmentProvider {
   }
 }
 
+class _AssignmentProvider extends _Provider
+    implements LectureAssignmentProvider {
+  int assignmentCalls = 0;
+  int reviewCalls = 0;
+  String? reviewAnswers;
+  List<Uint8List>? reviewImages;
+  Completer<String>? assignmentResult;
+  Completer<String>? reviewResult;
+  @override
+  Future<String> createAssignment({
+    required List<Uint8List> images,
+    required String lectureTitle,
+    required String sourceNotes,
+    required String request,
+  }) async {
+    assignmentCalls++;
+    receivedNotes = sourceNotes;
+    receivedImages = images;
+    return assignmentResult?.future ??
+        '<h1>Practice reasoning</h1><textarea data-answer-key="reason"></textarea>';
+  }
+
+  @override
+  Future<String> reviewAssignment({
+    required List<Uint8List> images,
+    required String lectureTitle,
+    required String sourceNotes,
+    required String assignmentHtml,
+    required String answersJson,
+  }) async {
+    reviewCalls++;
+    reviewAnswers = answersJson;
+    reviewImages = images;
+    return reviewResult?.future ?? '<h1>Reasoning feedback</h1>';
+  }
+}
+
+Future<void> _createAssignment(WidgetTester tester) async {
+  await tester.tap(find.text('Create assignment'));
+  await _advance(tester);
+  await tester.tap(find.widgetWithText(FilledButton, 'Create assignment').last);
+  await _advance(tester);
+}
+
 Future<void> _mount(
   WidgetTester tester, {
   required _MemoryStore store,
@@ -204,6 +250,142 @@ Future<void> _send(WidgetTester tester, {String provider = 'ChatGPT'}) async {
 }
 
 void main() {
+  testWidgets(
+    'teaching HTML opens first and is included when creating an assignment without ink',
+    (tester) async {
+      final store = _MemoryStore(
+        LectureContent(lectureId: _lecture.id).withHtml(
+          '<h1>Teaching page</h1><svg><title>Velocity diagram</title><path d="M0 0L10 10"/></svg>',
+          sourceRevision: 0,
+          provider: 'ChatGPT',
+        ),
+      );
+      final ink = _InkController()
+        ..snapshot = InkSnapshot(
+          drawing: Uint8List.fromList([1]),
+          preview: _png,
+          images: [],
+          changeId: 0,
+        );
+      final provider = _AssignmentProvider();
+      await _mount(tester, store: store, ink: ink, providers: [provider]);
+      expect(find.textContaining('Teaching page'), findsOneWidget);
+      await _createAssignment(tester);
+      await tester.pumpAndSettle();
+      expect(provider.receivedImages, isEmpty);
+      expect(provider.receivedNotes, contains('<svg>'));
+      expect(provider.receivedNotes, contains(_lecture.notes));
+      expect(store.content.hasInk, false);
+      expect(store.content.assignments, hasLength(1));
+    },
+  );
+  testWidgets(
+    'assignment creation preserves lecture and reviews a frozen ink answer snapshot',
+    (tester) async {
+      final store = _MemoryStore(_ink(html: '<h1>Original rendition</h1>'));
+      final provider = _AssignmentProvider();
+      await _mount(
+        tester,
+        store: store,
+        ink: _InkController(),
+        providers: [provider],
+      );
+      await _createAssignment(tester);
+      expect(provider.assignmentCalls, 1);
+      expect(store.content.html, contains('Original rendition'));
+      expect(store.content.drawing, [1, 2, 3]);
+      final first = store.content.assignments.single;
+      final answer = jsonEncode({
+        'reason': 'My reasoning',
+        'sketch': {
+          'kind': 'ink',
+          'png': 'data:image/png;base64,${base64Encode(_png)}',
+        },
+      });
+      tester
+          .widget<AssignmentView>(find.byType(AssignmentView))
+          .onChanged(answer);
+      await tester.pumpAndSettle();
+      provider.reviewResult = Completer<String>();
+      await tester.ensureVisible(find.text('Ask ChatGPT to review'));
+      await tester.tap(find.text('Ask ChatGPT to review'));
+      await _advance(tester);
+      expect(provider.reviewCalls, 0);
+      await tester.tap(find.text('Send answers'));
+      await _advance(tester);
+      expect(provider.reviewCalls, 1);
+      expect(provider.reviewImages, hasLength(2));
+      expect(provider.reviewImages!.last, _png);
+      expect(provider.reviewAnswers, contains('attachedImage'));
+      expect(provider.reviewAnswers, isNot(contains(base64Encode(_png))));
+      tester
+          .widget<AssignmentView>(find.byType(AssignmentView))
+          .onChanged('{"reason":"Improved reasoning"}');
+      await _advance(tester);
+      provider.reviewResult!.complete('<h1>Review of earlier answer</h1>');
+      await tester.pumpAndSettle();
+      final reviewed = store.content.assignments.single;
+      expect(reviewed.id, first.id);
+      expect(reviewed.answersJson, contains('Improved reasoning'));
+      expect(reviewed.feedbackIsStale, true);
+      expect(find.text('Feedback is for earlier answers'), findsOneWidget);
+    },
+  );
+
+  testWidgets('canceled assignment does not commit a late provider result', (
+    tester,
+  ) async {
+    final store = _MemoryStore(_ink());
+    final provider = _AssignmentProvider()
+      ..assignmentResult = Completer<String>();
+    await _mount(
+      tester,
+      store: store,
+      ink: _InkController(),
+      providers: [provider],
+    );
+    await _createAssignment(tester);
+    await tester.tap(find.text('Cancel request'));
+    await _advance(tester);
+    provider.assignmentResult!.complete('<h1>Too late</h1>');
+    await tester.pumpAndSettle();
+    expect(store.content.assignments, isEmpty);
+    expect(provider.cancels, 1);
+  });
+
+  testWidgets(
+    'assignment save failure prevents leaving and review until retried',
+    (tester) async {
+      final store = _MemoryStore(_ink());
+      final provider = _AssignmentProvider();
+      final key = GlobalKey<LectureWorkspaceState>();
+      await _mount(
+        tester,
+        store: store,
+        ink: _InkController(),
+        providers: [provider],
+        key: key,
+      );
+      await _createAssignment(tester);
+      store.failSave = true;
+      tester
+          .widget<AssignmentView>(find.byType(AssignmentView))
+          .onChanged('{"reason":"Unsaved"}');
+      await tester.pumpAndSettle();
+      expect(await key.currentState!.prepareToLeave(), false);
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Ask ChatGPT to review'),
+      );
+      expect(button.onPressed, isNull);
+      expect(provider.reviewCalls, 0);
+      store.failSave = false;
+      await tester.tap(find.text('Retry saving'));
+      await tester.pumpAndSettle();
+      expect(await key.currentState!.prepareToLeave(), true);
+      expect(store.content.assignments.single.answersJson, contains('Unsaved'));
+    },
+  );
+
   testWidgets(
     'reopens source ink and saved HTML, with independent view switching',
     (tester) async {

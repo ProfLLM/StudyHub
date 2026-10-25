@@ -18,7 +18,7 @@ Keep confirmed requirements separate from proposed implementation choices. Updat
 | Community | Open source, AI friendly, and welcoming to everyone. |
 | Merge approval | Changes to `main` require a pull request and at least one approving review from another human team member with write access. Repository administrators may merge their own pull requests without peer approval; the exception is limited to pull request merges. See [CONTRIBUTING.md](../CONTRIBUTING.md). |
 | Open-source license | MIT, selected for its simple, permissive terms. See [LICENSE](../LICENSE). |
-| Current scope | GUI CRUD and local JSON persistence, plus the authorized iPad ink and separate HTML increment below. Broader V0 planning remains separate. |
+| Current scope | GUI CRUD and local JSON persistence, plus the authorized iPad ink, separate HTML and Lecture assignment increments below. Broader V0 planning remains separate. |
 | Prototype storage | A single versioned local JSON file in application support; no database or cloud service. |
 | Prototype tooling | Flutter 3.47.7 / Dart 3.13.5; macOS runner targets 12.0+. Built-in state/navigation; `path_provider` locates app storage. |
 | Prototype deletion | Confirm deletion; deleting a Class also deletes its Lectures and notes. No undo in this prototype. |
@@ -48,6 +48,39 @@ The AI subscription entry records a product goal. The ChatGPT connection path is
 
 The license uses the [standard MIT terms published by the Open Source Initiative](https://opensource.org/license/mit).
 
+## Lecture assignments
+
+**Status:** implementation authorized by the owner on October 24, 2026, including isolated JavaScript, blocked network access, scoped answer saving, and ChatGPT review of handwritten answers.
+
+| Topic | Decision |
+| --- | --- |
+| Experience | Create an assignment from a Lecture and a learner request. ChatGPT chooses interactions to support understanding; assignments are separate from source notes and the static HTML rendition. |
+| Runtime | Separate WebKit host and opaque-origin sandboxed iframe. Inline scripts are permitted only inside the assignment; network/files/navigation are blocked. No credentials, library operations or AI calls are exposed. |
+| Answers | App-owned, bounded JSON persistence for form values, custom state and PNG ink. Existing data survives failures. Creation adds an assignment rather than replacing earlier attempts. |
+| Review | Explicit confirmation sends the assignment, saved answer snapshot, ink images and current lecture context through the existing ChatGPT connection. Feedback is static and advisory; it never overwrites answers and is marked stale after edits. |
+| Storage | Upgrade the per-Lecture sidecar to v2 when adding assignments; read existing v1. Preserve library v1. Older app versions reject v2. Keep simple local atomic writes and explicit size limits. |
+| Evidence | Unit/widget checks and synthetic native WebKit integration cover technical behavior. Live generated-assignment quality, handwriting assessment accuracy and physical Pencil feel remain separate acceptance checks. |
+
+See [Lecture assignments](assignments.md) for the supported interaction contract, limits and checks.
+
+## Class generation
+
+**Status:** authorized by the owner on October 24, 2026: describe a learning goal and create a Class with Lectures populated with teaching material.
+
+| Topic | Decision |
+| --- | --- |
+| Entry | Library/sidebar action available before any Class or Lecture exists. Reuse the learner's ChatGPT connection. |
+| Content | Generate a coherent Class with complete static HTML lessons, explanations, examples, visuals and practice. Interactive assignments remain a separate Lecture action. |
+| Control | Preview all lessons before saving. Only the learning request is sent; existing library content is not included. One bounded request, with no automatic per-Lecture calls. |
+| Persistence | Reuse library v1 notes and existing HTML sidecars. Write new lesson files before the atomic library commit; failed saves retain the draft and attempt cleanup. No database/schema migration. |
+| Evidence | Validate synthetic native creation, HTML preview, local persistence and reopening. Live educational quality remains separate from fixture tests. |
+
+See [Class generation](class-generation.md) for limits and recovery behavior.
+
+## Schema and persistence planning — October 24, 2026
+
+The owner confirmed **durable local storage first**, with Mac–iPad synchronization outside the next storage implementation, and **bounded source notes/ink and answer snapshots** so the basis of new assignments and reviews remains inspectable. The [schema and persistence plan](data-persistence-plan.html) recommends SQLite with in-database binary assets, domain-specific records, referenced snapshots, and verified migration/backup. The storage engine, schema and migration are **proposals**, not approved implementation decisions. Snapshot quota and detailed cleanup policy, backup policy, the database binding, and device durability/performance gates remain to be resolved before implementation. Existing JSON formats and current product behavior remain authoritative; these planning decisions do not authorize application implementation.
+
 ## Proposed architectural defaults
 
 These are starting points for discussion, not settled requirements:
@@ -70,7 +103,7 @@ These are starting points for discussion, not settled requirements:
 | External editing contract | Discovery, transport, authentication, capabilities, schemas, and permissions. |
 | Voice input | Dictation versus recordings, transcription location, retention, and consent. |
 | Future ink portability | Cross-platform editable stroke representation and optional recognition beyond this native iPad increment. |
-| Interactive HTML and animation | Any future active-content permissions and packaging; this increment uses isolated static WebKit rendering. |
+| Interactive HTML and animation | Broader canvas permissions and packaging; active content is currently limited to isolated Lecture assignments. |
 | Long-term content storage | JSON is selected for the prototype; assets, migrations, export, backup, optional encryption, and any later database remain open. |
 | Network and accounts | Offline expectations, sync, accounts, and whether collaboration belongs in the product. |
 | Product details | Lecture ordering, moving content, cross-Lecture links, and what a study plan contains. |

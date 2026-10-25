@@ -32,13 +32,21 @@ For isolated development runs, use `--dart-define=STUDYHUB_PROFILE=some-test-nam
 
 ChatGPT uses the documented [open-source subscription route](https://developers.openai.com/siwc/token-sharing-open-source). The implementation uses a loopback OAuth callback, PKCE/state/nonce checks, signed ID-token verification, Keychain storage, account model discovery, token refresh, image inputs, and streaming inference. Only a completed response is committed; cancellation, quota errors, failed transport, and malformed results preserve source and previous HTML.
 
-On iPad, a modal system Safari controller keeps the app active during loopback sign-in. On macOS, the system browser returns through the loopback listener. These paths still need live account verification; mocked protocol tests do not establish account access or successful inference. A connection can be initiated or disconnected from the workspace.
+On iPad, a modal system Safari controller keeps the app active during loopback sign-in. On macOS, the system browser returns through the loopback listener. macOS sign-in, stored-session reuse, and seven public synthetic conversions have completed through a real account with credit fallback disabled. The iPad account flow still needs device acceptance; mocked protocol tests do not establish that path. A connection can be initiated or disconnected from the workspace. Sign-in allows up to 15 minutes and closes its local callback on timeout or cancellation. If it expires, select Continue with ChatGPT to start a fresh session; reloading an expired callback URL cannot complete sign-in. **Continue with ChatGPT** starts sign-in; a first-success notice explains plan usage, and **Manage usage** opens the account’s app limits. Declined plan permission can be explicitly requested again; terminal refresh errors clear only the unusable session while retaining its registration.
 
-Claude Pro direct return is requested but not implemented. Its confirmed mobile connector path requires an internet-reachable authenticated service, as described in [Claude's remote connector documentation](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp). Hosting/public access has not been approved or deployed. No consumer cookies, native-app tokens, undocumented endpoints, paid API fallback, or manual import are substituted.
+OpenAI’s current plan-usage route can draw from included allowance or an existing credits balance according to account/app settings. There is no documented request parameter that forces included allowance only. Before live tests under the owner’s $0 requirement, verify credit fallback is disabled in ChatGPT usage settings, or set StudyHub’s credit limit to zero if that control is offered. The app does not buy credits, change billing, or substitute an API-billed route. See [OpenAI’s usage guidance](https://developers.openai.com/siwc/ui-ux-guidelines).
+
+Claude support is deferred to [issue #6](https://github.com/ProfLLM/StudyHub/issues/6). There is no Claude setup, connector, hosting, or conversation flow in this delivery.
+
+### Local connection storage
+
+On iPad, credentials use non-synchronizing `WhenUnlockedThisDeviceOnly` Keychain records. On macOS, ChatGPT uses the standard encrypted local Keychain with an explicit calling-app ACL. Exact-item permission checks reject broad, foreign, duplicate, or changed-identity records before reading or overwriting secrets; operations suppress Keychain prompts and run on a shared background executor with completion on the UI thread. This supports ordinary local app builds without developer-device registration. No Apple account changes were made.
+
+macOS file-based Keychain backup and migration follow OS policy; this choice does not provide iOS-style `ThisDeviceOnly` guarantees. Its APIs are legacy and may need revisiting for distribution. Ad hoc code-identity changes can require disconnecting with the original app or removing only its matching provider record in Keychain Access before reconnecting. Stable signing avoids that development limitation. These choices remain revisable; see [Apple TN3137](https://developer.apple.com/documentation/technotes/tn3137-on-mac-keychains) and [calling-app ACL defaults](https://developer.apple.com/documentation/security/secaccesscreate(_:_:_:)).
 
 ## Static HTML isolation
 
-The assistant is asked for self-contained HTML, inline vector diagrams, and MathML equations. Generated scripts and remote rendering libraries are not required. Unknown or ambiguous handwriting should be marked for review rather than silently invented.
+The assistant is asked for self-contained HTML, inline vector diagrams, and MathML equations. Generated scripts and remote rendering libraries are not required. Unknown or ambiguous handwriting should be marked for review rather than silently invented. Static SVG patterns, exponent positioning, and semantic deletion/insertion markup preserve shaded regions, labels, and corrections. WebKit-incompatible SVG context paint uses the diagram’s current text color so marker arrowheads remain visible.
 
 An HTML parser removes active elements, event attributes, remote resource references, and unsafe CSS. A restrictive content security policy is inserted before the content. Native WebKit prepends its own restrictive CSP, independently disables page JavaScript, uses nonpersistent website storage, blocks network/file loads, and cancels nonlocal navigation. No page-to-native message handler is installed.
 
@@ -53,7 +61,9 @@ flutter pub get
 flutter build macos --release
 flutter build ios --simulator --debug --no-codesign
 flutter test
-dart format --output=none --set-exit-if-changed lib test integration_test test_driver
+# Use a Python environment with Pillow installed:
+python3 test_fixtures/ai_quality/validate.py
+dart format --output=none --set-exit-if-changed lib test integration_test test_driver live_test
 flutter analyze
 ```
 
@@ -65,6 +75,16 @@ xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
   -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO test
 ```
+
+Run macOS native image/credential tests without developer-account setup:
+
+```sh
+xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner \
+  -configuration Debug -destination 'platform=macOS,arch=arm64' \
+  -parallel-testing-enabled NO test
+```
+
+Keychain tests use fresh UUID-scoped records with disposable synthetic values, validate actual stored ACLs and round trips, and delete only those exact records. They never inspect real provider credentials.
 
 Run the synthetic full-flow test on that simulator:
 
@@ -84,7 +104,21 @@ The integration test creates a library in a disposable temporary directory. It u
 - Dart tests cover persistence faults, revision/lifecycle races, navigation, narrow layouts, sanitization, and synthetic provider protocol responses.
 - Native simulator tests cover bounds, rotation geometry, source round trips, export, undo, and WebKit isolation behavior.
 - Synthetic stroke playback does not prove Pencil latency, pressure, palm rejection, or physical handwriting feel.
+- The six-sheet synthetic semantic corpus in `test_fixtures/ai_quality/` covers equations, diagrams, corrections, order, and uncertainty. It is handwriting-style synthetic content, not evidence of physical handwriting recognition. Its report template records unrun provider cases as `not_run`.
 - Live-provider accuracy and quota behavior require an authenticated account and representative image runs. Credentials and private notes must never enter fixtures or logs.
 - A macOS build is a regression check; it is not an iPad or native renderer validation.
 
 Record actual commands, devices, failures, and coverage gaps with each delivery. The first physical Pencil test is the owner's single final experience review, as explicitly requested.
+
+### Optional stable macOS signing
+
+When an Apple Development identity is already installed locally, optional stable signing can use it without portal updates or device registration. Replace the placeholder with that identity's team; do not commit local signing details:
+
+```sh
+xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner \
+  -configuration Debug -destination 'platform=macOS,arch=arm64' \
+  CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY='Apple Development' \
+  CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM='<YOUR_TEAM_ID>' build
+```
+
+The ordinary ad hoc contributor build path remains unchanged. A copied app with a fresh disposable bundle identifier and an existing local development identity passed the same UUID-only Keychain/ACL tests; no production credential records or Apple account settings were accessed. This validates local signing and storage, rather than distribution or notarization.

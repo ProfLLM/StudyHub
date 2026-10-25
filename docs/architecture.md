@@ -89,7 +89,7 @@ Use revision checks to avoid silently overwriting content changed since an assis
 
 The current provider boundary accepts only a confirmed Lecture snapshot and returns HTML through app-owned sanitization and revision checks. A newer source is preserved and marks an older result stale. Cancellation and failed conversion retain the previous rendition.
 
-ChatGPT uses its documented open-source subscription route with browser OAuth, PKCE, signed token validation, Keychain storage, model discovery, and streaming inference. Live account access and quality remain unverified. Claude Pro direct return requires an authenticated public connector service; that service has not been authorized or deployed. No API billing or manual import fallback is substituted. General external editing, history, and integration discovery remain proposals. Do not use credential scraping or assume subscription API entitlement.
+ChatGPT uses its documented open-source subscription route with browser OAuth, PKCE, signed token validation, Keychain storage, model discovery, and streaming inference. macOS account access and seven public synthetic conversions have completed; iPad sign-in and physical handwriting remain device acceptance checks. Account settings may allow existing-credit consumption; verify credit fallback is disabled (or an app credit limit is zero) before the owner’s allowance-only live tests. Claude support is deferred to [issue #6](https://github.com/ProfLLM/StudyHub/issues/6); no connector service or Claude adapter is included. No API billing or manual import fallback is substituted. General external editing, history, and integration discovery remain proposals. Do not use credential scraping or assume subscription API entitlement.
 
 ## Persistence and privacy
 
@@ -98,6 +98,8 @@ The navigation prototype uses local JSON storage, so learners can browse their l
 Writes flush a temporary file before renaming it over the library. UI state changes only after a successful save. Missing files mean a new empty library; malformed files and unsupported versions block editing without overwriting data. There is no migration, multi-process locking, automatic backup, or sync implementation. Deleting a Class cascades to its Lectures after GUI confirmation. See the [README](../README.md) for location, backup/reset guidance, and the JSON shape.
 
 Per-Lecture sidecars hold versioned editable ink, a PNG preview, and optional HTML with its source revision, leaving the existing library format unchanged. Source saves are serialized within the process and reject stale/conflicting revisions. Navigation awaits pending saves; failed saves remain visible and retryable. See [Ink and HTML](ink-and-html.md) for size limits and portability tradeoffs.
+
+Connection credentials stay in OS Keychain, separate from Lecture files. iPad uses device-only records; macOS uses encrypted local Keychain with calling-app ACL validation, allowing ordinary builds without developer-device registration. macOS backup and code-signing tradeoffs are documented in [Ink and HTML](ink-and-html.md).
 
 This is an interim storage choice. Long-term asset storage and portability remain open.
 

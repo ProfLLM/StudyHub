@@ -370,6 +370,324 @@ void main() {
     },
   );
 
+  test('declined plan permission persists a specific consent retry, then normal sign-in stops forcing consent', () async {
+    final native = FakeNative();
+    final authorizations = <Map<String, String>>[];
+    late String nonce;
+    var granted = false;
+    native.open = (url) async {
+      final query = Uri.parse(url).queryParameters;
+      authorizations.add(query);
+      nonce = query['nonce']!;
+      final target = Uri.parse(query['redirect_uri']!).replace(
+        queryParameters: {
+          'state': query['state']!,
+          'code': 'synthetic-code',
+          if (query['client_id'] == 'dynamic_agent_client')
+            'client_id': 'oaiapp_test',
+        },
+      );
+      final client = HttpClient();
+      try {
+        await (await (await client.getUrl(target)).close()).drain<void>();
+      } finally {
+        client.close(force: true);
+      }
+    };
+    final transport = FakeTransport((_, uri, _, _) async {
+      if (uri.path.endsWith('/jwks.json')) return jsonResponse({'keys': []});
+      return jsonResponse({
+        'access_token': 'synthetic-access',
+        'refresh_token': 'synthetic-refresh',
+        'id_token': 'synthetic-id',
+        'scope': granted ? 'chatgpt.tokens.use.direct' : 'openid profile email',
+        'expires_in': 3600,
+      });
+    });
+    ChatGptSubscriptionProvider provider() => ChatGptSubscriptionProvider(
+      nativeAuth: native,
+      transport: transport,
+      now: () => now,
+      verifyIdToken: (_, _) async => {
+        'iss': 'https://auth.openai.com',
+        'aud': 'oaiapp_test',
+        'nonce': nonce,
+        'sub': 'synthetic',
+        'exp': now.millisecondsSinceEpoch ~/ 1000 + 3600,
+      },
+    );
+    await expectLater(
+      provider().connect(),
+      throwsA(isA<EnrichmentException>()),
+    );
+    expect(authorizations.first['client_id'], 'dynamic_agent_client');
+    expect(authorizations.first.containsKey('prompt'), false);
+    expect(native.values.containsKey('chatgpt.session'), false);
+    expect(
+      jsonDecode(native.values['chatgpt.registration']!)['needs_plan_consent'],
+      true,
+    );
+    expect(await provider().needsPlanNotice, false);
+    granted = true;
+    final retry = provider();
+    await retry.connect();
+    expect(authorizations[1]['client_id'], 'oaiapp_test');
+    expect(authorizations[1]['prompt'], 'consent');
+    expect(authorizations[1].containsKey('agent_name_hint'), false);
+    expect(
+      authorizations[1]['ext_agent_host_id'],
+      authorizations[0]['ext_agent_host_id'],
+    );
+    expect(
+      jsonDecode(native.values['chatgpt.registration']!)['needs_plan_consent'],
+      false,
+    );
+    expect(await retry.needsPlanNotice, true);
+    await retry.markPlanNoticeShown();
+    await provider().connect();
+    expect(authorizations[2].containsKey('prompt'), false);
+    expect(await provider().needsPlanNotice, false);
+  });
+
+  test('terminal refresh errors clear unusable tokens while retaining the registration', () async {
+    final codes = [
+      'invalid_grant',
+      'invalid_refresh_token',
+      'token_expired',
+      'refresh_token_expired',
+      'refresh_token_invalidated',
+      'refresh_token_reused',
+    ];
+    for (var index = 0; index < codes.length; index++) {
+      const registration =
+          '{"client_id":"oaiapp_test","host_id":"urn:uuid:synthetic","subject":"synthetic","plan_notice_shown":true}';
+      final native = FakeNative()
+        ..values['chatgpt.session'] = session(
+          now.subtract(const Duration(hours: 2)),
+        )
+        ..values['chatgpt.registration'] = registration;
+      var requests = 0;
+      final provider = ChatGptSubscriptionProvider(
+        nativeAuth: native,
+        now: () => now,
+        transport: FakeTransport((_, uri, _, _) async {
+          requests++;
+          expect(uri.path.endsWith('/token'), true);
+          final error = index.isEven ? codes[index] : {'code': codes[index]};
+          return ChatGptHttpResponse(
+            index.isEven ? 400 : 401,
+            Stream.value(
+              utf8.encode(
+                jsonEncode({
+                  'error': error,
+                  'error_description':
+                      'Synthetic private diagnostic must not leak',
+                }),
+              ),
+            ),
+          );
+        }),
+      );
+      await expectLater(
+        provider.generate(
+          images: [
+            Uint8List.fromList([1]),
+          ],
+          lectureTitle: '',
+          sourceNotes: '',
+        ),
+        throwsA(
+          isA<EnrichmentException>().having(
+            (e) => e.message,
+            'safe message',
+            isNot(contains('private diagnostic')),
+          ),
+        ),
+      );
+      expect(requests, 1);
+      expect(
+        native.values.containsKey('chatgpt.session'),
+        false,
+        reason: codes[index],
+      );
+      expect(native.values['chatgpt.registration'], registration);
+      expect(await provider.isConnected, false);
+    }
+  });
+
+  test('transient refresh failures and invalid client preserve credentials for recovery', () async {
+    for (final failure in [
+      (status: 503, body: '{"error":"invalid_grant"}'),
+      (status: 429, body: '{"error":"rate_limit"}'),
+      (status: 400, body: '{"error":"invalid_client"}'),
+      (status: 401, body: '<html>temporary gateway failure</html>'),
+      (status: 400, body: '{"error":{"code":"unknown_error"}}'),
+      (status: 0, body: ''),
+    ]) {
+      final saved = session(now.subtract(const Duration(hours: 2)));
+      final native = FakeNative()..values['chatgpt.session'] = saved;
+      final provider = ChatGptSubscriptionProvider(
+        nativeAuth: native,
+        now: () => now,
+        transport: FakeTransport((_, _, _, _) async {
+          if (failure.status == 0) {
+            throw const SocketException('Synthetic offline');
+          }
+          return ChatGptHttpResponse(
+            failure.status,
+            Stream.value(utf8.encode(failure.body)),
+          );
+        }),
+      );
+      await expectLater(
+        provider.generate(
+          images: [
+            Uint8List.fromList([1]),
+          ],
+          lectureTitle: '',
+          sourceNotes: '',
+        ),
+        throwsA(isA<EnrichmentException>()),
+      );
+      expect(native.values['chatgpt.session'], saved);
+    }
+  });
+
+  test('plan notice is local, registration-bound, and remains acknowledged after reconnect', () async {
+    final native = FakeNative();
+    final registration = {
+      'client_id': 'oaiapp_test',
+      'subject': 'synthetic',
+      'host_id': 'urn:uuid:synthetic',
+    };
+    native.values['chatgpt.registration'] = jsonEncode(registration);
+    ChatGptSubscriptionProvider provider() => ChatGptSubscriptionProvider(
+      nativeAuth: native,
+      transport: FakeTransport(
+        (_, _, _, _) async => throw StateError('No remote request allowed'),
+      ),
+    );
+    expect(await provider().needsPlanNotice, false);
+    await expectLater(
+      provider().markPlanNoticeShown(),
+      throwsA(isA<EnrichmentException>()),
+    );
+    native.values['chatgpt.session'] = session(now);
+    expect(await provider().needsPlanNotice, true);
+    await provider().markPlanNoticeShown();
+    expect(await provider().needsPlanNotice, false);
+    native.values.remove('chatgpt.session');
+    expect(await provider().needsPlanNotice, false);
+    native.values['chatgpt.session'] = session(now);
+    expect(await provider().needsPlanNotice, false);
+    final mismatched = jsonDecode(session(now)) as Map;
+    mismatched['subject'] = 'different-account';
+    native.values['chatgpt.session'] = jsonEncode(mismatched);
+    expect(await provider().needsPlanNotice, false);
+    await expectLater(
+      provider().markPlanNoticeShown(),
+      throwsA(isA<EnrichmentException>()),
+    );
+    expect(
+      jsonDecode(native.values['chatgpt.registration']!)['subject'],
+      'synthetic',
+    );
+  });
+
+  test('usage settings uses the native action without account or inference requests', () async {
+    final native = FakeNative();
+    await ChatGptSubscriptionProvider(
+      nativeAuth: native,
+      transport: FakeTransport(
+        (_, _, _, _) async => throw StateError('No remote request allowed'),
+      ),
+    ).openUsage();
+    expect(native.usageOpened, 1);
+    expect(native.values, isEmpty);
+  });
+
+  test(
+    'expired sign-in closes its callback and a fresh attempt can connect',
+    () async {
+      final native = FakeNative();
+      final authorizations = <Uri>[];
+      late String nonce;
+      var requests = 0;
+      native.open = (url) async => authorizations.add(Uri.parse(url));
+      final provider = ChatGptSubscriptionProvider(
+        nativeAuth: native,
+        authTimeout: const Duration(milliseconds: 30),
+        now: () => now,
+        transport: FakeTransport((_, uri, _, _) async {
+          requests++;
+          if (uri.path.endsWith('/jwks.json')) {
+            return jsonResponse({'keys': []});
+          }
+          return jsonResponse({
+            'access_token': 'synthetic-access',
+            'refresh_token': 'synthetic-refresh',
+            'id_token': 'synthetic-id',
+            'scope': 'chatgpt.tokens.use.direct',
+            'expires_in': 3600,
+          });
+        }),
+        verifyIdToken: (_, _) async => {
+          'iss': 'https://auth.openai.com',
+          'aud': 'oaiapp_test',
+          'nonce': nonce,
+          'sub': 'synthetic',
+          'exp': now.millisecondsSinceEpoch ~/ 1000 + 3600,
+        },
+      );
+      await expectLater(
+        provider.connect(),
+        throwsA(
+          isA<EnrichmentException>().having(
+            (e) => e.message,
+            'recovery guidance',
+            contains('fresh sign-in session'),
+          ),
+        ),
+      );
+      expect(native.closed, true);
+      expect(requests, 0);
+      expect(native.values.containsKey('chatgpt.session'), false);
+      final expired = authorizations.single.queryParameters;
+      final host = jsonDecode(
+        native.values['chatgpt.registration']!,
+      )['host_id'];
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 1);
+      try {
+        await expectLater(
+          client.getUrl(Uri.parse(expired['redirect_uri']!)),
+          throwsA(isA<SocketException>()),
+        );
+        native.open = (url) async {
+          final query = Uri.parse(url).queryParameters;
+          expect(query['state'], isNot(expired['state']));
+          expect(query['nonce'], isNot(expired['nonce']));
+          expect(query['code_challenge'], isNot(expired['code_challenge']));
+          expect(query['ext_agent_host_id'], host);
+          nonce = query['nonce']!;
+          final callback = Uri.parse(query['redirect_uri']!).replace(
+            queryParameters: {
+              'state': query['state']!,
+              'code': 'synthetic-fresh-code',
+              'client_id': 'oaiapp_test',
+            },
+          );
+          await (await (await client.getUrl(callback)).close()).drain<void>();
+        };
+        await provider.connect();
+        expect(await provider.isConnected, true);
+        expect(requests, 2);
+      } finally {
+        client.close(force: true);
+      }
+    },
+  );
+
   test(
     'OAuth browser cancellation closes local listener and browser',
     () async {
@@ -421,9 +739,15 @@ class FakeNative extends ChatGptNativeAuth {
   final opened = Completer<void>();
   Future<void> Function(String)? open;
   bool closed = false;
+  int usageOpened = 0;
+  @override
+  Future<void> openUsage() async {
+    usageOpened++;
+  }
+
   @override
   Future<void> openAuth(String url) async {
-    opened.complete();
+    if (!opened.isCompleted) opened.complete();
     await open?.call(url);
   }
 

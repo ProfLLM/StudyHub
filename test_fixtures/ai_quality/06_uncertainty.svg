@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1400" viewBox="0 0 1000 1400">
+<rect width="100%" height="100%" fill="#fffefa"/>
+<polyline points="35,145 970,145" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,197 970,197" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,249 970,249" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,301 970,301" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,353 970,353" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,405 970,405" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,457 970,457" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,509 970,509" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,561 970,561" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,613 970,613" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,665 970,665" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,717 970,717" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,769 970,769" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,821 970,821" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,873 970,873" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,925 970,925" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,977 970,977" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1029 970,1029" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1081 970,1081" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1133 970,1133" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1185 970,1185" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1237 970,1237" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1289 970,1289" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1341 970,1341" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1393 970,1393" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="86,75 86,1370" fill="none" stroke="#e4bac0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="108" y="43" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="18" fill="#6d737c">PUBLIC SYNTHETIC • hand-style typesetting, not actual pen input</text>
+<text x="108" y="113" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="37" fill="#2458a5">Ambiguity &amp; crossings</text>
+<text x="110" y="188" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">Keep unclear source details unclear.</text>
+<text x="110" y="254" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="29" fill="#243653">R = 4.? kΩ   (last digit unclear)</text>
+<text x="110" y="319" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="29" fill="#243653">z = 1 / [illegible]     v = iR</text>
+<text x="110" y="418" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">Crossing wires — NO junction dot:</text>
+<polyline points="220,620 660,430" fill="none" stroke="#2458a5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="649.5323106807999,442.1007223055776 660,430 644.0143585665363,429.3223068830726" fill="none" stroke="#2458a5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="220,430 660,620" fill="none" stroke="#b34e57" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="644.0143585665363,620.6776931169273 660,620 649.5323106807999,607.8992776944224" fill="none" stroke="#b34e57" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="170" y="648" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">A</text>
+<text x="680" y="438" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">B</text>
+<text x="170" y="438" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">C</text>
+<text x="680" y="648" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">D</text>
+<text x="110" y="727" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="27" fill="#243653">A -&gt; B and C -&gt; D only. No shared node.</text>
+<text x="110" y="833" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">Separate junction example — dot at J:</text>
+<polyline points="245,1040 430,1040" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="415.5928463623572,1046.9594485457797 430,1040 415.5928463623572,1033.0405514542203" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450,1040 675,1040" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="660.5928463623571,1046.9594485457797 675,1040 660.5928463623571,1033.0405514542203" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="440,890 440,1030" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="433.0405514542203,1015.5928463623571 440,1030 446.9594485457797,1015.5928463623571" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="440,1050 440,1200" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="433.0405514542203,1185.5928463623572 440,1200 446.9594485457797,1185.5928463623572" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="440" cy="1040" r="7" fill="#243653" stroke="#243653" stroke-width="3"/>
+<text x="195" y="1048" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">P</text>
+<text x="690" y="1048" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">Q</text>
+<text x="425" y="878" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">R</text>
+<text x="425" y="1238" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">S</text>
+<text x="465" y="1073" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">J</text>
+<text x="110" y="1316" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#b34e57">Do not guess the missing digit or denominator.</text>
+</svg>

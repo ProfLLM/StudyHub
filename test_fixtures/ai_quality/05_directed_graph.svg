@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1400" viewBox="0 0 1000 1400">
+<rect width="100%" height="100%" fill="#fffefa"/>
+<polyline points="35,145 970,145" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,197 970,197" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,249 970,249" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,301 970,301" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,353 970,353" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,405 970,405" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,457 970,457" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,509 970,509" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,561 970,561" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,613 970,613" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,665 970,665" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,717 970,717" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,769 970,769" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,821 970,821" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,873 970,873" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,925 970,925" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,977 970,977" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1029 970,1029" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1081 970,1081" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1133 970,1133" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1185 970,1185" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1237 970,1237" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1289 970,1289" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1341 970,1341" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1393 970,1393" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="86,75 86,1370" fill="none" stroke="#e4bac0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="108" y="43" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="18" fill="#6d737c">PUBLIC SYNTHETIC • hand-style typesetting, not actual pen input</text>
+<text x="108" y="113" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="37" fill="#2458a5">BFS &amp; a correction</text>
+<text x="110" y="189" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="29" fill="#243653">Directed graph; BFS from A</text>
+<polyline points="233.86665619964234,395.0986712721574 414.30271373551216,315.70680595637464" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="403.9184680999363,327.8792109192414 414.30271373551216,315.70680595637464 398.3127907731704,315.1390351765916" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="231.16404182447593,429.9449867676646 417.15141537420106,548.9769058394887" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="401.2651654366073,547.0724208906636 417.15141537420106,548.9769058394887 408.76819836394884,535.3489319416924" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="487.0,300.0 691.0,300.0" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="676.5928463623571,306.9594485457797 691.0,300.0 676.5928463623571,293.0405514542203" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="476.63423893056535,544.3169838883834 701.9260724785933,327.07128725278505" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="696.3859659065631,342.08152439849823 701.9260724785933,327.07128725278505 686.7243643320103,332.0620857285917" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="487.0,570.0 691.0,570.0" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="676.5928463623571,576.9594485457797 691.0,570.0 676.5928463623571,563.0405514542203" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="730.0,337.0 730.0,531.0" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="723.0405514542203,516.5928463623571 730.0,531.0 736.9594485457797,516.5928463623571" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="200" cy="410" r="35" fill="none" stroke="#243653" stroke-width="3"/>
+<text x="188" y="417" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">A</text>
+<circle cx="450" cy="300" r="35" fill="none" stroke="#243653" stroke-width="3"/>
+<text x="438" y="307" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">B</text>
+<circle cx="450" cy="570" r="35" fill="none" stroke="#243653" stroke-width="3"/>
+<text x="438" y="577" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">C</text>
+<circle cx="730" cy="300" r="35" fill="none" stroke="#243653" stroke-width="3"/>
+<text x="718" y="307" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">D</text>
+<circle cx="730" cy="570" r="35" fill="none" stroke="#243653" stroke-width="3"/>
+<text x="718" y="577" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">E</text>
+<text x="110" y="762" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="27" fill="#243653">Visit neighbors alphabetically.</text>
+<text x="110" y="825" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">BFS order: A, B, C, D, E</text>
+<text x="110" y="885" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">Levels: A=0; B=1; C=1; D=2</text>
+<text x="110" y="949" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="29" fill="#b34e57">E level 3</text>
+<polyline points="105,940 270,930" fill="none" stroke="#b34e57" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="325" y="949" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="29" fill="#2458a5">E level 2 (correct)</text>
+<text x="110" y="1029" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="29" fill="#243653">Shortest A -&gt; C -&gt; E, length 2</text>
+<text x="110" y="1098" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">BFS cost O(V + E)</text>
+</svg>

@@ -21,6 +21,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+        B3000000000000000000000B /* MacProviderKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3000000000000000000000C /* MacProviderKeychain.swift */; };
+        B30000000000000000000009 /* MacProviderKeychainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3000000000000000000000A /* MacProviderKeychainTests.swift */; };
 		4E487F2C512E449F8CB17001 /* ChatGptAuthBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E487F2C512E449F8CB17002 /* ChatGptAuthBridge.swift */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
@@ -62,6 +64,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+        B3000000000000000000000C /* MacProviderKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MacProviderKeychain.swift; path = "../native/MacProviderKeychain.swift"; sourceTree = SOURCE_ROOT; };
+        B3000000000000000000000A /* MacProviderKeychainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MacProviderKeychainTests.swift; path = "../native/MacProviderKeychainTests.swift"; sourceTree = SOURCE_ROOT; };
 		4E487F2C512E449F8CB17002 /* ChatGptAuthBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatGptAuthBridge.swift; sourceTree = "<group>"; };
 		331C80D5294CF71000263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		331C80D7294CF71000263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
@@ -106,6 +110,7 @@
 		331C80D6294CF71000263BE5 /* RunnerTests */ = {
 			isa = PBXGroup;
 			children = (
+                B3000000000000000000000A /* MacProviderKeychainTests.swift */,
 				331C80D7294CF71000263BE5 /* RunnerTests.swift */,
 			);
 			path = RunnerTests;
@@ -169,6 +174,7 @@
 			isa = PBXGroup;
 			children = (
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
+                B3000000000000000000000C /* MacProviderKeychain.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
 				4E487F2C512E449F8CB17002 /* ChatGptAuthBridge.swift */,
 				33E51913231747F40026EE4D /* DebugProfile.entitlements */,
@@ -349,6 +355,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                B30000000000000000000009 /* MacProviderKeychainTests.swift in Sources */,
 				331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -357,6 +364,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                B3000000000000000000000B /* MacProviderKeychain.swift in Sources */,
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				4E487F2C512E449F8CB17001 /* ChatGptAuthBridge.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,

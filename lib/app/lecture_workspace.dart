@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../ai/chatgpt_subscription_provider.dart'
+    show ChatGptSubscriptionProvider;
 import '../ai/lecture_enrichment_provider.dart';
 import '../domain/lecture_content.dart';
 import '../domain/library.dart';
@@ -232,6 +234,7 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
     setState(() => _connecting = true);
     try {
       await provider.connect();
+      if (!await _showPlanNotice(provider, operation)) return;
       if (mounted && operation == _operation) {
         setState(() {
           _connected = true;
@@ -252,6 +255,52 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
         _activeProvider = null;
       }
     }
+  }
+
+  Future<void> _openChatGptUsage(ChatGptSubscriptionProvider provider) async {
+    try {
+      await provider.openUsage();
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _message = 'Open chatgpt.com/settings/usage to manage StudyHub’s plan and credit limits.',
+        );
+      }
+    }
+  }
+
+  Future<bool> _showPlanNotice(
+    LectureEnrichmentProvider provider,
+    int operation,
+  ) async {
+    if (!mounted || operation != _operation) return false;
+    if (provider is! ChatGptSubscriptionProvider) return true;
+    final show = await provider.needsPlanNotice;
+    if (!mounted || operation != _operation) return false;
+    if (!show) return true;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: const Text('You’re using your ChatGPT plan'),
+        content: const Text(
+          'Eligible requests use your ChatGPT plan or credits according to your account settings. Manage StudyHub’s limits in ChatGPT. To use included allowance only, turn off credit fallback or set the app’s credit limit to zero if that control is available.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => _openChatGptUsage(provider),
+            child: const Text('Manage usage'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || operation != _operation) return false;
+    await provider.markPlanNoticeShown();
+    return mounted && operation == _operation;
   }
 
   Future<void> _disconnect() async {
@@ -337,8 +386,10 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
                 '${snapshot.images.length} image${snapshot.images.length == 1 ? '' : 's'} from this Lecture, its title, and any existing text notes will be sent using your connected account.',
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Your ink stays in StudyHub. This uses your plan allowance.',
+              Text(
+                provider is ChatGptSubscriptionProvider
+                    ? 'Your ink stays in StudyHub. This uses your ChatGPT plan or credits according to your account settings.'
+                    : 'Your ink stays in StudyHub. This uses your plan allowance.',
               ),
             ],
           ),
@@ -355,7 +406,10 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
         ),
       );
       if (send != true || !mounted || operation != _operation) return;
-      if (!await provider.isConnected) await provider.connect();
+      if (!await provider.isConnected) {
+        await provider.connect();
+      }
+      if (!await _showPlanNotice(provider, operation)) return;
       if (!mounted || operation != _operation) return;
       setState(() => _connected = true);
       final result = await provider.generate(
@@ -535,10 +589,29 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
                                     ? 'Connecting…'
                                     : _connected
                                     ? 'Disconnect ${widget.providers[_providerIndex].name}'
+                                    : widget.providers[_providerIndex]
+                                          is ChatGptSubscriptionProvider
+                                    ? 'Continue with ChatGPT'
                                     : 'Connect ${widget.providers[_providerIndex].name}',
                               ),
                             ),
-                          if (_connected) const Text('Using your plan'),
+                          if (_connected)
+                            Text(
+                              widget.providers[_providerIndex]
+                                      is ChatGptSubscriptionProvider
+                                  ? 'Using ChatGPT plan'
+                                  : 'Using your plan',
+                            ),
+                          if (widget.providers.isNotEmpty &&
+                              widget.providers[_providerIndex]
+                                  is ChatGptSubscriptionProvider)
+                            TextButton(
+                              onPressed: () => _openChatGptUsage(
+                                widget.providers[_providerIndex]
+                                    as ChatGptSubscriptionProvider,
+                              ),
+                              child: const Text('Manage usage'),
+                            ),
                           if (widget.providers.isNotEmpty)
                             ValueListenableBuilder<bool>(
                               valueListenable: _ink.ready,

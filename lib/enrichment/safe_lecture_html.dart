@@ -20,14 +20,25 @@ class SafeLectureHtml {
   static const _tags = {
     'article', 'section', 'main', 'header', 'footer', 'aside', 'nav', 'div',
     'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'hr', 'strong',
-    'b', 'i', 'em', 'u', 's', 'small', 'sub', 'sup', 'mark', 'blockquote',
+    'b',
+    'i',
+    'em',
+    'u',
+    's',
+    'del',
+    'ins',
+    'small',
+    'sub',
+    'sup',
+    'mark',
+    'blockquote',
     'pre', 'code', 'kbd', 'ul', 'ol', 'li', 'dl', 'dt', 'dd', 'table',
     'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
     'figure', 'figcaption', 'details', 'summary', 'a', 'img', 'style',
     // Native WebKit supports static SVG and MathML without third-party scripts.
     'svg', 'g', 'path', 'rect', 'circle', 'ellipse', 'line', 'polyline',
     'polygon', 'text', 'tspan', 'defs', 'marker', 'clippath', 'lineargradient',
-    'radialgradient', 'stop', 'title', 'desc', 'use', 'symbol',
+    'radialgradient', 'stop', 'pattern', 'title', 'desc', 'use', 'symbol',
     'math', 'mrow', 'mi', 'mn', 'mo', 'ms', 'mtext', 'mspace', 'msup',
     'msub', 'msubsup', 'mfrac', 'msqrt', 'mroot', 'mfenced', 'mtable',
     'mtr', 'mtd', 'munder', 'mover', 'munderover', 'menclose', 'mstyle',
@@ -114,9 +125,11 @@ class SafeLectureHtml {
     'transform',
     'text-anchor',
     'dominant-baseline',
+    'baseline-shift',
     'font-size',
     'font-family',
     'font-weight',
+    'font-style',
     'dx',
     'dy',
     'marker-start',
@@ -132,6 +145,9 @@ class SafeLectureHtml {
     'clip-path',
     'gradientunits',
     'gradienttransform',
+    'patternunits',
+    'patterncontentunits',
+    'patterntransform',
     'offset',
     'stop-color',
     'stop-opacity',
@@ -226,6 +242,12 @@ class SafeLectureHtml {
               continue;
             }
           } else if (_safeAttributeValue(value)) {
+            // WebKit does not paint SVG context-stroke/context-fill markers
+            // reliably. Inherit the diagram's text color as a visible fallback.
+            if ((name == 'stroke' || name == 'fill') &&
+                (value == 'context-stroke' || value == 'context-fill')) {
+              element.attributes[attribute] = 'currentColor';
+            }
             continue;
           }
         }

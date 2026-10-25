@@ -1,10 +1,10 @@
 import Cocoa
 import FlutterMacOS
-import Security
 
 /// External browser sign-in with loopback callback and protected local tokens.
 final class ChatGptAuthBridge: NSObject, FlutterPlugin {
-  private let service = "com.studyhub.chatgpt"
+  private let storage = MacProviderKeychain(service: "com.studyhub.chatgpt",
+    keys: ["chatgpt.session", "chatgpt.registration"])
 
   static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "studyhub/chatgpt_auth", binaryMessenger: registrar.messenger)
@@ -14,6 +14,10 @@ final class ChatGptAuthBridge: NSObject, FlutterPlugin {
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let arguments = call.arguments as? [String: Any] ?? [:]
     switch call.method {
+    case "openUsage":
+      // Fixed destination; connection credentials never enter this URL.
+      if NSWorkspace.shared.open(URL(string: "https://chatgpt.com/settings/usage")!) { result(nil) }
+      else { result(FlutterError(code: "usage_unavailable", message: "Could not open ChatGPT usage settings.", details: nil)) }
     case "openAuth":
       guard let text = arguments["url"] as? String, let url = URL(string: text),
             url.scheme == "https", url.host == "auth.openai.com",
@@ -31,40 +35,29 @@ final class ChatGptAuthBridge: NSObject, FlutterPlugin {
         result(FlutterError(code: "invalid_key", message: "Invalid connection storage key.", details: nil))
         return
       }
-      var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                 kSecAttrService as String: service, kSecAttrAccount as String: key,
-                                 kSecAttrSynchronizable as String: false]
-      if call.method == "readSecure" {
-        query[kSecReturnData as String] = true
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        if status == errSecItemNotFound { result(nil); return }
-        guard status == errSecSuccess, let data = item as? Data,
-              let value = String(data: data, encoding: .utf8) else { storageError(result); return }
-        result(value)
-      } else if call.method == "deleteSecure" {
-        let status = SecItemDelete(query as CFDictionary)
-        if status == errSecSuccess || status == errSecItemNotFound { result(nil) }
-        else { storageError(result) }
-      } else {
-        guard let value = arguments["value"] as? String, let data = value.data(using: .utf8) else {
-          storageError(result); return
+      let method = call.method
+      let value = arguments["value"] as? String
+      MacProviderKeychain.perform({
+        switch method {
+        case "readSecure": return try self.storage.read(key)
+        case "deleteSecure": try self.storage.delete(key); return nil
+        case "writeSecure":
+          guard let value else { throw MacProviderKeychain.StorageError.unavailable }
+          try self.storage.write(key, value: value)
+          return nil
+        default: throw MacProviderKeychain.StorageError.unavailable
         }
-        let attributes: [String: Any] = [kSecValueData as String: data,
-          kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly]
-        var status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        if status == errSecItemNotFound {
-          query.merge(attributes) { _, new in new }
-          status = SecItemAdd(query as CFDictionary, nil)
+      }, completion: { outcome in
+        switch outcome {
+        case .success(let value): result(value)
+        case .failure: self.storageError(result)
         }
-        if status == errSecSuccess { result(nil) } else { storageError(result) }
-      }
+      })
     default: result(FlutterMethodNotImplemented)
     }
   }
 
   private func storageError(_ result: FlutterResult) {
-    result(FlutterError(code: "secure_storage", message: "Could not access secure ChatGPT connection storage.", details: nil))
+    result(FlutterError(code: "secure_storage", message: MacProviderKeychain.StorageError.unavailable.localizedDescription, details: nil))
   }
 }

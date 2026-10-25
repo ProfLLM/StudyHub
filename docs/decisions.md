@@ -34,16 +34,17 @@ Keep confirmed requirements separate from proposed implementation choices. Updat
 | Preservation | Keep editable ink and HTML as separate renditions within the same Lecture. Existing text notes stay available. |
 | Storage | Keep library schema v1 intact. Add one versioned JSON sidecar per Lecture with native ink, PNG preview, revision, and optional HTML. No database or speculative cross-platform stroke schema. |
 | Snapshot | Derive source bytes, preview, ordered images, and mutation identity from one immutable native drawing snapshot. Associate HTML with that source revision; reject stale callbacks. |
-| AI access | Both ChatGPT Pro and Claude Pro are requested with direct return. Existing plan allowance only; no additional API charges and no manual-import fallback. |
-| ChatGPT | Implement documented open-source subscription OAuth/inference, Keychain token storage, image inputs, and completed-stream-only HTML results. Live account verification remains required. |
-| Claude | Direct mobile return using the documented connector route requires a public HTTPS service. No service is approved/deployed yet; preserve this as a capability/access blocker, not a fake provider. |
+| AI access | Current delivery: ChatGPT Pro with direct return. Claude is deferred by the owner on October 24, 2026. Existing plan allowance only; no additional API charges and no manual-import fallback. |
+| ChatGPT | Implement documented open-source subscription OAuth/inference, Keychain token storage, image inputs, and completed-stream-only HTML results. macOS sign-in and seven public synthetic conversions completed; iPad account sign-in remains a device acceptance check. Verify credit fallback is off, or an app credit limit is zero, before allowance-only live inference; the supported wire route itself does not force included allowance only. |
+| Claude | Deferred by the owner on October 24, 2026; tracked in [issue #6](https://github.com/ProfLLM/StudyHub/issues/6). This supersedes the earlier connector/hosting approval. No Claude adapter or public connector is included in the current delivery. |
+| Credentials | OS Keychain only: iPad device-only records; macOS encrypted local Keychain with calling-app ACL validation, supporting ordinary builds without developer-device registration. No plaintext credential files. macOS backup/signing tradeoffs are documented and revisable. |
 | HTML | Static self-contained HTML with SVG and MathML. Sanitize markup; native WebKit additionally disables scripts, network/file subresources, navigation, and persistent site storage. |
 | Validation | Agents own technical checks. Use simulator/native tests and synthetic fixtures; the owner's final review is the first physical Pencil test. Do not claim real-device or live-provider validation from simulation. |
 | Delivery | Incremental PRs permitted. Straightforward PRs may be merged under repository rules and the owner's explicit merge authorization. |
 
 See [Ink and HTML](ink-and-html.md) for behavior, limits, and checks.
 
-The AI subscription entry records a product goal. Documented connection paths are recorded above; live account behavior and Claude hosting remain unvalidated.
+The AI subscription entry records a product goal. The ChatGPT connection path is recorded above; live account behavior remains unvalidated. Claude hosting is outside the current scope.
 
 The license uses the [standard MIT terms published by the Open Source Initiative](https://opensource.org/license/mit).
 

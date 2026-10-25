@@ -20,6 +20,8 @@ abstract class ChatGptNativeAuth {
   Future<void> deleteSecure(String key);
   Future<void> openAuth(String url);
   Future<void> closeAuth();
+  Future<void> openUsage() =>
+      Future.error(UnsupportedError('ChatGPT usage settings are unavailable.'));
 }
 
 class MethodChannelChatGptAuth extends ChatGptNativeAuth {
@@ -43,6 +45,8 @@ class MethodChannelChatGptAuth extends ChatGptNativeAuth {
       _channel.invokeMethod('openAuth', {'url': url});
   @override
   Future<void> closeAuth() => _channel.invokeMethod('closeAuth');
+  @override
+  Future<void> openUsage() => _channel.invokeMethod('openUsage');
 }
 
 class ChatGptHttpResponse {
@@ -99,7 +103,7 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
     ChatGptTransport? transport,
     ChatGptTokenVerifier? verifyIdToken,
     DateTime Function()? now,
-    this.authTimeout = const Duration(minutes: 5),
+    this.authTimeout = const Duration(minutes: 15),
     this.generationTimeout = const Duration(minutes: 4),
   }) : _native = nativeAuth ?? MethodChannelChatGptAuth(),
        _transport = transport ?? IoChatGptTransport(),
@@ -137,6 +141,42 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
         session?['refresh_token'] is String &&
         _hasPlanScope(session?['scope']);
   }
+
+  /// Acknowledgment belongs to the validated registration, so signing out does
+  /// not repeatedly show it. These methods never contact an account service.
+  Future<bool> get needsPlanNotice async {
+    final session = await _read(_sessionKey);
+    final registration = await _read(_registrationKey);
+    return _matchesRegistration(session, registration) &&
+        registration!['plan_notice_shown'] != true;
+  }
+
+  Future<void> markPlanNoticeShown() => _operation(() async {
+    final session = await _read(_sessionKey);
+    final registration = await _read(_registrationKey);
+    _ensureActive();
+    if (!_matchesRegistration(session, registration)) {
+      throw const EnrichmentException(
+        'Connect ChatGPT before acknowledging plan usage.',
+      );
+    }
+    registration!['plan_notice_shown'] = true;
+    await _native.writeSecure(_registrationKey, jsonEncode(registration));
+  });
+
+  bool _matchesRegistration(
+    Map<String, dynamic>? session,
+    Map<String, dynamic>? registration,
+  ) =>
+      session?['access_token'] is String &&
+      session?['refresh_token'] is String &&
+      _hasPlanScope(session?['scope']) &&
+      registration?['client_id'] is String &&
+      registration?['subject'] is String &&
+      session?['client_id'] == registration?['client_id'] &&
+      session?['subject'] == registration?['subject'];
+
+  Future<void> openUsage() => _native.openUsage();
 
   Future<Map<String, dynamic>?> _read(String key) async {
     final value = await _native.readSecure(key);
@@ -220,6 +260,8 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
               'redirect_uri': redirect.toString(),
               'scope': _scope,
               'resource': _resource,
+              if (registration['needs_plan_consent'] == true)
+                'prompt': 'consent',
               'state': state,
               'nonce': nonce,
               'code_challenge_method': 'S256',
@@ -231,12 +273,18 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
       _ensureActive();
       await _native.openAuth(authorization.toString());
       _ensureActive();
-      final returned = await Future.any<Uri>([
-        callback.future,
-        cancellation.future.then<Uri>(
-          (_) => throw const EnrichmentException('Connection cancelled.'),
-        ),
-      ]).timeout(authTimeout);
+      final returned =
+          await Future.any<Uri>([
+            callback.future,
+            cancellation.future.then<Uri>(
+              (_) => throw const EnrichmentException('Connection cancelled.'),
+            ),
+          ]).timeout(
+            authTimeout,
+            onTimeout: () => throw const EnrichmentException(
+              'ChatGPT sign-in timed out. Select Continue with ChatGPT to start a fresh sign-in session.',
+            ),
+          );
       _ensureActive();
       final result = validateChatGptCallback(
         returned,
@@ -258,9 +306,9 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
       });
       _ensureActive();
       final idToken = tokens['id_token'];
-      if (idToken is! String || !_hasPlanScope(tokens['scope'])) {
+      if (idToken is! String) {
         throw const EnrichmentException(
-          'ChatGPT plan access was not granted. Connect again and allow plan usage.',
+          'ChatGPT identity was not returned. Connect again.',
         );
       }
       final jwks = await _json(
@@ -283,6 +331,15 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
         );
       }
       registration['subject'] = claims['sub'];
+      if (!_hasPlanScope(tokens['scope'])) {
+        registration['needs_plan_consent'] = true;
+        await _native.writeSecure(_registrationKey, jsonEncode(registration));
+        await _native.deleteSecure(_sessionKey);
+        throw const EnrichmentException(
+          'ChatGPT plan access was not granted. Continue with ChatGPT again to review plan permissions.',
+        );
+      }
+      registration['needs_plan_consent'] = false;
       await _native.writeSecure(_registrationKey, jsonEncode(registration));
       await _saveTokens(
         tokens,
@@ -343,13 +400,26 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
     if (expiry is! num ||
         _now().add(const Duration(minutes: 1)).millisecondsSinceEpoch >=
             expiry) {
-      final tokens = await _form('$_issuer/api/accounts/oauth/token', {
-        'grant_type': 'refresh_token',
-        'client_id': session['client_id'] as String,
-        'refresh_token': session['refresh_token'] as String,
-        'resource': _resource,
-      });
+      late final Map<String, dynamic> tokens;
+      try {
+        tokens = await _form('$_issuer/api/accounts/oauth/token', {
+          'grant_type': 'refresh_token',
+          'client_id': session['client_id'] as String,
+          'refresh_token': session['refresh_token'] as String,
+          'resource': _resource,
+        });
+      } on _ChatGptRequestFailure catch (error) {
+        if ((error.status == 400 || error.status == 401) &&
+            _terminalRefreshErrors.contains(error.code)) {
+          await _native.deleteSecure(_sessionKey);
+          throw const EnrichmentException(
+            'ChatGPT connection expired. Continue with ChatGPT again.',
+          );
+        }
+        rethrow;
+      }
       tokens['scope'] ??= session['scope'];
+      tokens['id_token'] ??= session['id_token'];
       await _saveTokens(
         tokens,
         session['client_id'] as String,
@@ -453,7 +523,7 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
       1024 * 1024,
     ).timeout(const Duration(seconds: 30));
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw _httpError(response.statusCode);
+      throw _ChatGptRequestFailure(response.statusCode, _errorCode(text));
     }
     return Map<String, dynamic>.from(jsonDecode(text) as Map);
   }
@@ -530,6 +600,40 @@ class ChatGptSubscriptionProvider implements LectureEnrichmentProvider {
         'Signed out on this device. Remote revocation could not be confirmed; disconnect StudyHub in ChatGPT settings.',
       );
     }
+  }
+}
+
+const _terminalRefreshErrors = {
+  'invalid_grant',
+  'invalid_refresh_token',
+  'token_expired',
+  'refresh_token_expired',
+  'refresh_token_invalidated',
+  'refresh_token_reused',
+};
+
+/// Keep machine-readable classification separate from safe user text. Never
+/// retain an error description/body, which may contain private provider data.
+class _ChatGptRequestFailure extends EnrichmentException {
+  _ChatGptRequestFailure(this.status, this.code)
+    : super(_httpError(status).message);
+  final int status;
+  final String? code;
+}
+
+String? _errorCode(String body) {
+  try {
+    final value = jsonDecode(body);
+    if (value is! Map) return null;
+    final error = value['error'];
+    final code = error is String
+        ? error
+        : (error is Map ? error['code'] : null);
+    return code is String && _terminalRefreshErrors.contains(code)
+        ? code
+        : null;
+  } catch (_) {
+    return null;
   }
 }
 

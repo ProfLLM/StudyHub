@@ -16,6 +16,8 @@ dependencies:
   jose: ^0.3.5+2
 
 dev_dependencies:
+  flutter_driver:
+    sdk: flutter
   integration_test:
     sdk: flutter
   flutter_test:

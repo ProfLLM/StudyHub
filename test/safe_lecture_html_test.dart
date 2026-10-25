@@ -8,6 +8,67 @@ Document clean(String source) =>
 
 void main() {
   test(
+    'preserves correction meaning and static graph shading and exponents',
+    () {
+      final document = clean('''
+      <p><del>E level 3</del><ins>E level 2 (correct)</ins></p>
+      <svg viewBox="0 0 100 100"><defs>
+      <pattern id="hatch" width="12" height="12" patternUnits="userSpaceOnUse"
+        patternContentUnits="userSpaceOnUse" patternTransform="rotate(20)">
+        <path d="M6 0V12" stroke="blue"/></pattern>
+      <marker id="arrow"><path stroke="context-stroke" fill="context-fill" d="M0 0L9 5L0 9"/></marker>
+      </defs><path fill="url(#hatch)" d="M0 0L80 80H0Z"/>
+      <text font-style="italic">x<tspan baseline-shift="super">2</tspan></text>
+      </svg>
+    ''');
+      expect(document.querySelector('del')!.text, 'E level 3');
+      expect(document.querySelector('ins')!.text, 'E level 2 (correct)');
+      expect(
+        document.querySelector('pattern')!.attributes['patternUnits'],
+        'userSpaceOnUse',
+      );
+      expect(
+        document.querySelector('pattern')!.attributes['patternContentUnits'],
+        'userSpaceOnUse',
+      );
+      expect(
+        document.querySelector('pattern')!.attributes['patternTransform'],
+        'rotate(20)',
+      );
+      expect(document.querySelector('path[fill="url(#hatch)"]'), isNotNull);
+      expect(
+        document.querySelector('tspan')!.attributes['baseline-shift'],
+        'super',
+      );
+      expect(
+        document.querySelector('text')!.attributes['font-style'],
+        'italic',
+      );
+      final marker = document.querySelector('marker path')!;
+      expect(marker.attributes['stroke'], 'currentColor');
+      expect(marker.attributes['fill'], 'currentColor');
+    },
+  );
+
+  test(
+    'pattern descendants retain the same active-content and URL restrictions',
+    () {
+      final document = clean(
+        '''<svg><defs><pattern id="p" width="10" height="10"
+      patternUnits="userSpaceOnUse" onload="BAD_HANDLER">
+      <script>BAD_SCRIPT</script><foreignObject>BAD_FOREIGN</foreignObject>
+      <use href="https://example.test/remote.svg#x"/>
+      <path fill="url(https://example.test/paint)" d="M0 0L9 9"/>
+      </pattern></defs><rect width="10" height="10" fill="url(#p)"/></svg>''',
+      );
+      expect(document.outerHtml, isNot(contains('BAD_')));
+      expect(document.outerHtml, isNot(contains('example.test')));
+      expect(document.querySelector('pattern')!.attributes['onload'], isNull);
+      expect(document.querySelector('rect')!.attributes['fill'], 'url(#p)');
+    },
+  );
+
+  test(
     'preserves semantic notes, typography, tables, and local navigation',
     () {
       final result = SafeLectureHtml.parse('''

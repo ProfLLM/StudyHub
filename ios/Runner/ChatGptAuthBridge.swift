@@ -20,6 +20,12 @@ final class ChatGptAuthBridge: NSObject, FlutterPlugin, SFSafariViewControllerDe
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let arguments = call.arguments as? [String: Any] ?? [:]
     switch call.method {
+    case "openUsage":
+      // Fixed destination; connection credentials never enter this URL.
+      UIApplication.shared.open(URL(string: "https://chatgpt.com/settings/usage")!, options: [:]) { opened in
+        if opened { result(nil) }
+        else { result(FlutterError(code: "usage_unavailable", message: "Could not open ChatGPT usage settings.", details: nil)) }
+      }
     case "openAuth":
       guard let text = arguments["url"] as? String, let url = URL(string: text),
             url.scheme == "https", url.host == "auth.openai.com",

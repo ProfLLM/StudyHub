@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1400" viewBox="0 0 1000 1400">
+<rect width="100%" height="100%" fill="#fffefa"/>
+<polyline points="35,145 970,145" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,197 970,197" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,249 970,249" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,301 970,301" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,353 970,353" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,405 970,405" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,457 970,457" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,509 970,509" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,561 970,561" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,613 970,613" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,665 970,665" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,717 970,717" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,769 970,769" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,821 970,821" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,873 970,873" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,925 970,925" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,977 970,977" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1029 970,1029" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1081 970,1081" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1133 970,1133" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1185 970,1185" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1237 970,1237" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1289 970,1289" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1341 970,1341" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1393 970,1393" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="86,75 86,1370" fill="none" stroke="#e4bac0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="108" y="43" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="18" fill="#6d737c">PUBLIC SYNTHETIC • hand-style typesetting, not actual pen input</text>
+<text x="108" y="113" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="37" fill="#2458a5">RC charging</text>
+<text x="110" y="190" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">12 V source; R = 2 kΩ; C = 100 μF</text>
+<text x="110" y="242" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="27" fill="#243653">Switch closes at t = 0; capacitor uncharged.</text>
+<polyline points="225,400 370,400" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="370,400 385,375 410,425 435,375 460,425 485,375 500,400" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="500,400 740,400 740,530" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="690,530 790,530" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="690,550 790,550" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="740,550 740,700 225,700 225,565" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="205,565 245,565" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="190,540 260,540" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="225,540 225,400" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="375" y="356" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#243653">R = 2 kΩ</text>
+<text x="790" y="543" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">C</text>
+<text x="115" y="546" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#243653">12 V</text>
+<text x="265" y="551" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#243653">+</text>
+<text x="265" y="586" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#243653">−</text>
+<polyline points="560,355 680,355" fill="none" stroke="#2458a5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="665.5928463623571,361.9594485457797 680,355 665.5928463623571,348.0405514542203" fill="none" stroke="#2458a5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="570" y="331" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#243653">i(t)</text>
+<polyline points="510,700 510,735" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="480,735 540,735" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="490,748 530,748" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="500,761 520,761" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="110" y="863" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">τ = RC = (2000)(100 x 10^(-6)) = 0.20 s</text>
+<text x="110" y="930" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">v_C(t) = 12(1 − e^(−t / 0.20)) V</text>
+<text x="110" y="995" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">i(0+) = 12 / 2000 = 6 mA</text>
+<text x="110" y="1087" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="27" fill="#243653">Loop: source + -&gt; R -&gt; C -&gt; source −</text>
+</svg>

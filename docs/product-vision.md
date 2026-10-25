@@ -42,7 +42,7 @@ Rich content should have useful fallbacks. Consider keyboard interaction, screen
 
 ## AI as a collaborator
 
-Learners should be able to work with ChatGPT or Claude using their own subscription through a supported connection. The integration mechanism has not been validated or selected.
+Learners should be able to work with ChatGPT or Claude using their own subscription through a supported connection. The current increment implements ChatGPT access; Claude is deferred. Live account access and conversion quality remain to be verified.
 
 Two complementary experiences are intended:
 
@@ -71,4 +71,4 @@ A new Lecture opens a native ink canvas on iPad. The canvas scrolls only vertica
 
 The learner can request a beautiful HTML rendition of a selected Lecture snapshot: diagrams become vector diagrams and equations become typeset math. Original ink remains editable, and Ink/HTML are one tap apart. More ink marks the existing HTML as needing refresh; generation never silently overwrites newer source material.
 
-Both ChatGPT Pro and Claude Pro with direct result return are requested. Additional API charges and manual export/import fallback are not authorized. Provider capabilities must be proven independently; a public connector for Claude remains a separate access decision. The current HTML format is static and isolated, with scripts and remote resources disabled. This increment does not choose a broader V0, cloud sync, or permanent storage architecture. See [Ink and HTML](ink-and-html.md).
+The current increment supports ChatGPT Pro with direct result return. The owner deferred Claude on October 24, 2026; follow-up requirements are in [issue #6](https://github.com/ProfLLM/StudyHub/issues/6). Additional API charges and manual export/import fallback are not authorized. The current HTML format is static and isolated, with scripts and remote resources disabled. This increment does not choose a broader V0, cloud sync, or permanent storage architecture. See [Ink and HTML](ink-and-html.md).

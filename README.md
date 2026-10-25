@@ -12,7 +12,11 @@ Class
 
 Create, browse, rename, and delete Classes and Lectures through the GUI. Select a Class to see its Lectures; select a Lecture to open its notes canvas. Use the breadcrumbs to return, or select another Class in the sidebar. Narrow windows use a navigation drawer. Names are required; deletion asks for confirmation and deleting a Class also deletes its Lectures and notes.
 
+**Create class with ChatGPT** turns your learning goals into a Class with fully populated teaching Lectures. Preview the lessons, then save them together. Generated Lectures open in HTML, with Ink available for your own notes. See [Class generation](docs/class-generation.md).
+
 On iPad, Lectures open an editable PencilKit canvas. Pencil writes and fingers scroll vertically, with a hard top stop and at most one blank viewport below the last ink. A separate HTML view preserves the original ink. On macOS, ink previews are read-only.
+
+**Create assignment** asks ChatGPT for an interactive learning experience from a Lecture. On iPadOS 16+ and macOS 13+, assignments support written answers, choices, custom interactions and ink, with local answer saving. **Ask ChatGPT to review** sends a confirmed answer snapshot—including ink images—for separate feedback. See [Lecture assignments](docs/assignments.md) for use, isolation, storage and limits.
 
 The ChatGPT connection uses the documented open-source subscription sign-in route. macOS sign-in and seven public synthetic image-to-HTML requests have completed through the real account connection. Physical handwriting and iPad account sign-in remain separate device acceptance checks. Claude support is deferred to [issue #6](https://github.com/ProfLLM/StudyHub/issues/6). This delivery needs no StudyHub-hosted connector. No API-billed fallback or manual import is substituted. See [Ink and HTML](docs/ink-and-html.md) for workflow, limits, and verification.
 
@@ -71,7 +75,7 @@ The app uses `path_provider` to locate its application support directory and wri
 
 A build without sandboxing would instead use `~/Library/Application Support/org.profllm.studyhub/library.json`. The native path lookup is checked by the macOS integration test. Data is outside the repository and survives app rebuilds.
 
-The single file contains schema version 1, stable IDs, Classes with nested Lectures, and each Lecture's notes string. New Lectures have empty notes. A minimal example is:
+The single file contains schema version 1, stable IDs, Classes with nested Lectures, and each Lecture's notes string. Manually created Lectures have empty notes; ChatGPT-created Lectures include a text rendition of their teaching material and a separate HTML sidecar. A minimal example is:
 
 ```json
 {
@@ -92,6 +96,8 @@ Each change is saved immediately by flushing a temporary file and renaming it ov
 
 Ink and generated HTML use separate versioned per-Lecture JSON files in `lecture-content/` beside the library. These contain editable native drawing data, a portable PNG preview, ink revision, and optional HTML with its source revision. Existing `library.json` and typed notes keep their original format. Back up the entire support directory to include ink and HTML. Notes autosave after drawing changes; visible save errors offer retry and prevent leaving before a successful save.
 
+Adding an assignment upgrades its Lecture sidecar to schema v2, storing generated HTML, answers and review feedback. This app reads both sidecar versions; older builds reject v2. The library remains v1. See [assignment storage](docs/assignments.md#persistence-and-bounds) before moving between versions.
+
 For a backup or reset, quit the app first, then copy the whole support directory. For a complete reset, move both `library.json` and `lecture-content/` aside. Moving it aside starts an empty library next launch. Use one app instance at a time; concurrent writers, migrations, automatic backups, and sync are outside this prototype. Avoid editing the file while the app is open.
 
 ## Checks
@@ -108,12 +114,13 @@ Tests cover library/content persistence, failed writes, navigation, workspace re
 
 The app uses the white-background logo in `assets/branding/`. Its book-and-connections symbol is the macOS app icon shown in Finder and the Dock. The icon sizes live in `macos/Runner/Assets.xcassets/AppIcon.appiconset/`; rebuild and reopen the app to pick up icon changes.
 
-The longer-term goal is a learning canvas for notes, visuals, interaction, and animation, with supported connections to the learner's own ChatGPT or Anthropic subscription. Voice, sync, active interactive HTML, and broader assistant editing remain future work.
+The longer-term goal is a learning canvas for notes, visuals, interaction, and animation, with supported connections to the learner's own ChatGPT or Anthropic subscription. Interactive HTML is available within isolated Lecture assignments. Voice, sync, and broader assistant editing remain future work.
 
 | Document | Purpose |
 | --- | --- |
 | [Product vision](docs/product-vision.md) | Terminology, prototype scope, and long-term direction. |
 | [Architecture](docs/architecture.md) | Implemented boundaries and future proposals. |
+| [Schema and persistence plan](docs/data-persistence-plan.html) | Proposed durable local schema, storage, migration, and recovery. |
 | [Decisions](docs/decisions.md) | Confirmed choices and unresolved questions. |
 | [Contributing](CONTRIBUTING.md) | Human and AI-assisted contribution guidance. |
 | [AGENTS.md](AGENTS.md) | Shared coding-agent instructions. |

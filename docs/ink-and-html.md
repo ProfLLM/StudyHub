@@ -60,6 +60,8 @@ An HTML parser removes active elements, event attributes, remote resource refere
 
 This supports static study notes. Interactive scripts, animations, arbitrary external links, and remotely hosted fonts/assets are outside this increment.
 
+The later [Lecture assignments](assignments.md) increment adds a separate isolated JavaScript renderer and answer saving. The static note rendition and its restrictions remain unchanged.
+
 ## Build and validate
 
 Use the README's Flutter 3.47.7 / Dart 3.13.5 toolchain and full Xcode. For a contribution, run the required builds before the final test suite, then formatting and analysis:

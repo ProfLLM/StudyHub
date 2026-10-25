@@ -13,6 +13,8 @@ class MainFlutterWindow: NSWindow {
     RegisterGeneratedPlugins(registry: flutterViewController)
     let htmlRegistrar = flutterViewController.registrar(forPlugin: "StudyHubHtml")
     htmlRegistrar.register(StudyHtmlFactory(messenger: htmlRegistrar.messenger), withId: "studyhub/html")
+    let assignmentRegistrar = flutterViewController.registrar(forPlugin: "StudyHubAssignment")
+    assignmentRegistrar.register(StudyAssignmentFactory(messenger: assignmentRegistrar.messenger), withId: "studyhub/assignment")
     ChatGptAuthBridge.register(with: flutterViewController.registrar(forPlugin: "StudyHubChatGptAuth"))
 
     super.awakeFromNib()

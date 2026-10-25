@@ -53,6 +53,16 @@ For example, a learner might ask an assistant for a study plan on a topic. The a
 
 AI-created content should behave like other editable app content. Learners should be able to understand what changed, retain control over shared context, and undo unwanted edits.
 
+## Requested Class generation
+
+Learners can describe what they want to learn and have ChatGPT build a Class with populated teaching Lectures. The experience includes explanations, worked examples, diagrams where useful, and practice prompts, rather than an empty outline. The learner previews the generated lessons before saving the Class. Generated teaching material remains separate from the learner's ink and can serve as context for interactive assignments and answer review. See [Class generation](class-generation.md).
+
+## Requested Lecture assignments
+
+Learners can request a ChatGPT-created assignment that helps them understand a Lecture. An assignment is interactive HTML with activities selected around the material, including choices, written explanations, ink, and demonstrations. It remains separate from source notes and saves answers locally. Learners explicitly request ChatGPT review of their answers, including handwritten math reasoning sent as images. Feedback is advisory, stored separately, and marked out of date when answers change.
+
+The owner approved isolated JavaScript, blocked network access, and scoped answer saving on October 24, 2026. See [Lecture assignments](assignments.md) for implemented boundaries and verification limits.
+
 ## Platform and community
 
 Use Flutter for the application. Begin with a macOS implementation while keeping the shared product model portable. The next platforms and their delivery order have not been chosen.

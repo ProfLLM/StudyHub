@@ -94,7 +94,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, 'Mechanics'));
     await tester.pumpAndSettle();
-    expect(find.text('Open notes canvas'), findsOneWidget);
+    expect(find.text('Open lecture'), findsOneWidget);
     await menuAction(tester, 'Lecture actions: Forces', 'Delete');
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../ai/lecture_enrichment_provider.dart';
+import '../ai/class_generation_provider.dart';
 import '../domain/library.dart';
 import '../persistence/lecture_content_store.dart';
 import '../persistence/library_store.dart';
+import '../persistence/generated_class_writer.dart';
+import 'class_creator.dart';
 import 'lecture_workspace.dart';
 
 class StudyHubApp extends StatelessWidget {
@@ -219,6 +222,36 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   });
 
+  LectureEnrichmentProvider? get _classProvider {
+    for (final provider in widget.providers) {
+      if (provider is ClassGenerationProvider) return provider;
+    }
+    return null;
+  }
+
+  Future<void> _generateClass() => _withSavedWorkspace(() async {
+    final provider = _classProvider;
+    if (provider == null || _contentStore == null || _store == null) return;
+    final next = await showDialog<StudyLibrary>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ClassCreator(
+        provider: provider,
+        save: (draft) => GeneratedClassWriter(
+          _store!,
+          _contentStore!,
+        ).save(draft, _library!),
+      ),
+    );
+    if (next != null && mounted) {
+      setState(() {
+        _library = next;
+        _classId = next.classes.last.id;
+        _lectureId = next.classes.last.lectures.first.id;
+      });
+    }
+  });
+
   Future<void> _classAction(StudyClass studyClass, String action) async {
     if (_leaving || _busy) return;
     if (action == 'rename') {
@@ -357,6 +390,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
             label: const Text('New class'),
           ),
         ),
+        if (_classProvider != null && _contentStore != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: FilledButton.tonalIcon(
+              onPressed: _busy ? null : _generateClass,
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('Create class with ChatGPT'),
+            ),
+          ),
         const Padding(
           padding: EdgeInsets.fromLTRB(24, 28, 24, 8),
           child: Text(
@@ -452,6 +494,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 icon: const Icon(Icons.add),
                 label: const Text('Create a class'),
               ),
+              if (_classProvider != null && _contentStore != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: FilledButton.tonalIcon(
+                    onPressed: _busy ? null : _generateClass,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Create class with ChatGPT'),
+                  ),
+                ),
             ],
           ),
         ),
@@ -554,7 +605,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
             leading: const Icon(Icons.article_outlined),
             title: Text(lecture.title),
-            subtitle: const Text('Open notes canvas'),
+            subtitle: const Text('Open lecture'),
             onTap: _busy ? null : () => _openLecture(lecture.id),
             trailing: _menu(
               'Lecture',

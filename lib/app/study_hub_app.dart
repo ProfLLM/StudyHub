@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../ai/lecture_enrichment_provider.dart';
 import '../domain/library.dart';
+import '../persistence/lecture_content_store.dart';
 import '../persistence/library_store.dart';
+import 'lecture_workspace.dart';
 
 class StudyHubApp extends StatelessWidget {
-  const StudyHubApp({super.key, required this.openStore});
+  const StudyHubApp({
+    super.key,
+    required this.openStore,
+    this.openContentStore,
+    this.providers = const [],
+  });
 
   final Future<LibraryStore> Function() openStore;
+  final Future<LectureContentStore> Function()? openContentStore;
+  final List<LectureEnrichmentProvider> providers;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -20,14 +30,25 @@ class StudyHubApp extends StatelessWidget {
         border: OutlineInputBorder(),
       ),
     ),
-    home: LibraryScreen(openStore: openStore),
+    home: LibraryScreen(
+      openStore: openStore,
+      openContentStore: openContentStore,
+      providers: providers,
+    ),
   );
 }
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key, required this.openStore});
+  const LibraryScreen({
+    super.key,
+    required this.openStore,
+    this.openContentStore,
+    this.providers = const [],
+  });
 
   final Future<LibraryStore> Function() openStore;
+  final Future<LectureContentStore> Function()? openContentStore;
+  final List<LectureEnrichmentProvider> providers;
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -35,6 +56,9 @@ class LibraryScreen extends StatefulWidget {
 
 class _LibraryScreenState extends State<LibraryScreen> {
   LibraryStore? _store;
+  LectureContentStore? _contentStore;
+  final _workspaceKeys = <String, GlobalKey<LectureWorkspaceState>>{};
+  bool _leaving = false;
   StudyLibrary? _library;
   String? _classId;
   String? _lectureId;
@@ -66,13 +90,66 @@ class _LibraryScreenState extends State<LibraryScreen> {
     try {
       final store = await widget.openStore();
       final library = await store.load();
+      final contentStore = await widget.openContentStore?.call();
       if (!mounted) return;
       setState(() {
         _store = store;
         _library = library;
+        _contentStore = contentStore;
       });
     } catch (_) {
       if (mounted) setState(() => _loadFailed = true);
+    }
+  }
+
+  /// Keep one navigation/mutation in flight, and restore input whenever its
+  /// saved workspace remains mounted (for example a canceled New class dialog).
+  Future<void> _withSavedWorkspace(Future<void> Function() action) async {
+    if (_leaving || _busy) return;
+    _leaving = true;
+    final workspace = _workspaceKeys[_lectureId]?.currentState;
+    try {
+      if (await workspace?.prepareToLeave() ?? true) {
+        if (mounted) await action();
+      }
+    } finally {
+      try {
+        if (workspace != null && workspace.mounted) {
+          await workspace.resumeAfterNavigation();
+        }
+      } finally {
+        _leaving = false;
+      }
+    }
+  }
+
+  Future<void> _openClass(String? classId) => _withSavedWorkspace(() async {
+    setState(() {
+      _classId = classId;
+      _lectureId = null;
+    });
+  });
+
+  Future<void> _openLecture(String? lectureId) => _withSavedWorkspace(() async {
+    setState(() => _lectureId = lectureId);
+  });
+
+  Future<void> _deleteNotes(Iterable<Lecture> lectures) async {
+    for (final lecture in lectures) {
+      try {
+        await _contentStore?.delete(lecture.id);
+        _workspaceKeys.remove(lecture.id);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'The item was deleted, but its local notes file could not be removed.',
+              ),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -128,7 +205,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ) ??
       false;
 
-  Future<void> _newClass() async {
+  Future<void> _newClass() => _withSavedWorkspace(() async {
     final title = await _askTitle('class');
     if (title == null || !mounted) return;
     final studyClass = StudyClass(id: newId(), title: title);
@@ -140,9 +217,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
         _lectureId = null;
       });
     }
-  }
+  });
 
   Future<void> _classAction(StudyClass studyClass, String action) async {
+    if (_leaving || _busy) return;
     if (action == 'rename') {
       final title = await _askTitle('class', current: studyClass.title);
       if (title == null || !mounted) return;
@@ -162,35 +240,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
           !mounted) {
         return;
       }
-      if (await _save(
-        StudyLibrary(
-          classes: _library!.classes
-              .where((item) => item.id != studyClass.id)
-              .toList(),
-        ),
-      )) {
-        if (_classId == studyClass.id) {
-          setState(() {
-            _classId = null;
-            _lectureId = null;
-          });
+      await _withSavedWorkspace(() async {
+        if (await _save(
+          StudyLibrary(
+            classes: _library!.classes
+                .where((item) => item.id != studyClass.id)
+                .toList(),
+          ),
+        )) {
+          if (_classId == studyClass.id) {
+            setState(() {
+              _classId = null;
+              _lectureId = null;
+            });
+          }
+          await _deleteNotes(studyClass.lectures);
         }
-      }
+      });
     }
   }
 
   Future<void> _newLecture() async {
+    if (_leaving || _busy) return;
     final studyClass = _selectedClass!;
     final title = await _askTitle('lecture');
     if (title == null || !mounted) return;
-    await _replaceClass(
-      studyClass.copyWith(
-        lectures: [
-          ...studyClass.lectures,
-          Lecture(id: newId(), title: title),
-        ],
-      ),
+    final lecture = Lecture(id: newId(), title: title);
+    final saved = await _replaceClass(
+      studyClass.copyWith(lectures: [...studyClass.lectures, lecture]),
     );
+    if (saved && mounted && _contentStore != null) {
+      setState(() => _lectureId = lecture.id);
+    }
   }
 
   Future<bool> _replaceClass(StudyClass replacement) => _save(
@@ -203,6 +284,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   );
 
   Future<void> _lectureAction(Lecture lecture, String action) async {
+    if (_leaving || _busy) return;
     final studyClass = _selectedClass!;
     if (action == 'rename') {
       final title = await _askTitle('lecture', current: lecture.title);
@@ -223,15 +305,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
           !mounted) {
         return;
       }
-      if (await _replaceClass(
-        studyClass.copyWith(
-          lectures: studyClass.lectures
-              .where((item) => item.id != lecture.id)
-              .toList(),
-        ),
-      )) {
-        if (_lectureId == lecture.id) setState(() => _lectureId = null);
-      }
+      await _withSavedWorkspace(() async {
+        if (await _replaceClass(
+          studyClass.copyWith(
+            lectures: studyClass.lectures
+                .where((item) => item.id != lecture.id)
+                .toList(),
+          ),
+        )) {
+          if (_lectureId == lecture.id) setState(() => _lectureId = null);
+          await _deleteNotes([lecture]);
+        }
+      });
     }
   }
 
@@ -304,12 +389,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       subtitle: Text('${studyClass.lectures.length} lectures'),
                       onTap: _busy
                           ? null
-                          : () {
-                              setState(() {
-                                _classId = studyClass.id;
-                                _lectureId = null;
-                              });
-                              if (Scaffold.of(context).isDrawerOpen) {
+                          : () async {
+                              await _openClass(studyClass.id);
+                              if (context.mounted &&
+                                  Scaffold.of(context).isDrawerOpen) {
                                 Navigator.pop(context);
                               }
                             },
@@ -330,7 +413,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Stored on this Mac',
+                  'Stored on this device',
                   style: TextStyle(fontSize: 12),
                 ),
               ),
@@ -384,19 +467,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
             spacing: 4,
             children: [
               TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => setState(() {
-                        _classId = null;
-                        _lectureId = null;
-                      }),
+                onPressed: _busy ? null : () => _openClass(null),
                 child: const Text('Classes'),
               ),
               const Icon(Icons.chevron_right, size: 16),
               TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => setState(() => _lectureId = null),
+                onPressed: _busy ? null : () => _openLecture(null),
                 child: Text(studyClass.title),
               ),
               if (lecture != null) ...[
@@ -442,7 +518,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
           child: Text(
             lecture == null
                 ? 'Lectures · ${studyClass.lectures.length}'
-                : 'Notes canvas · Preview',
+                : _contentStore == null
+                ? 'Notes canvas · Preview'
+                : 'Ink & HTML · Saved on this device',
           ),
         ),
         Expanded(
@@ -477,7 +555,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             leading: const Icon(Icons.article_outlined),
             title: Text(lecture.title),
             subtitle: const Text('Open notes canvas'),
-            onTap: _busy ? null : () => setState(() => _lectureId = lecture.id),
+            onTap: _busy ? null : () => _openLecture(lecture.id),
             trailing: _menu(
               'Lecture',
               lecture.title,
@@ -489,37 +567,65 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
-  Widget _canvas(Lecture lecture) => Container(
-    margin: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xffdfe4da)),
-    ),
-    child: SizedBox.expand(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
-        child: lecture.notes.isNotEmpty
-            ? SelectableText(lecture.notes)
-            : const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.edit_note, size: 32, color: Color(0xff71806e)),
-                  SizedBox(height: 20),
-                  Text(
-                    'Your notes start here.',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'This is a placeholder canvas. Editing and rich content will come later.',
-                    style: TextStyle(color: Color(0xff596456), height: 1.6),
-                  ),
-                ],
-              ),
-      ),
-    ),
-  );
+  Widget _canvas(Lecture lecture) => _contentStore != null
+      ? Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          clipBehavior: Clip.hardEdge,
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: LectureWorkspace(
+            key: _workspaceKeys.putIfAbsent(
+              lecture.id,
+              () => GlobalKey<LectureWorkspaceState>(),
+            ),
+            lecture: lecture,
+            store: _contentStore!,
+            providers: widget.providers,
+          ),
+        )
+      : Container(
+          margin: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xffdfe4da)),
+          ),
+          child: SizedBox.expand(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: lecture.notes.isNotEmpty
+                  ? SelectableText(lecture.notes)
+                  : const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.edit_note,
+                          size: 32,
+                          color: Color(0xff71806e),
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          'Your notes start here.',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'This is a placeholder canvas. Editing and rich content will come later.',
+                          style: TextStyle(
+                            color: Color(0xff596456),
+                            height: 1.6,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        );
 
   @override
   Widget build(BuildContext context) {

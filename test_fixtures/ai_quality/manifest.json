@@ -1,0 +1,410 @@
+{
+  "schema_version": 1,
+  "provenance": "Public synthetic study notes, drawn by deterministic code. Typeset handwriting-style font; not genuine handwriting and not a pen-recognition benchmark.",
+  "image_dimensions": {
+    "width": 1000,
+    "height": 1400
+  },
+  "cases": [
+    {
+      "id": "01_mechanics",
+      "title": "Forces & signs",
+      "equations": [
+        "m = 2 kg",
+        "a_x = 3 m/s^2",
+        "F_push - f = 12 N - 6 N = 6 N = m a_x",
+        "a_y = 0",
+        "N = mg"
+      ],
+      "diagram": {
+        "nodes": [
+          "block",
+          "normal",
+          "gravity",
+          "push",
+          "friction"
+        ],
+        "directed_edges": [
+          [
+            "block",
+            "normal",
+            "up"
+          ],
+          [
+            "block",
+            "gravity",
+            "down"
+          ],
+          [
+            "block",
+            "push",
+            "right; 12 N"
+          ],
+          [
+            "block",
+            "friction",
+            "left; 6 N"
+          ]
+        ]
+      },
+      "required": [
+        "Consistent right/up positive axes",
+        "Force and acceleration units retained"
+      ],
+      "forbidden": [
+        "Friction points right",
+        "Net horizontal force is 18 N"
+      ],
+      "assets": {
+        "png": {
+          "path": "01_mechanics.png",
+          "sha256": "edd679a346084cf5477ea2c5ada8bf2ef248a0ca897274bab0ba1e4ed1d85a4f",
+          "bytes": 132410
+        },
+        "svg": {
+          "path": "01_mechanics.svg",
+          "sha256": "ff30b93326ad4a063af356a50a6d06625e363810ae39c458fb451137a718b99b",
+          "bytes": 6723
+        }
+      }
+    },
+    {
+      "id": "02_rc_circuit",
+      "title": "RC charging",
+      "equations": [
+        "R = 2 kohm",
+        "C = 100 microfarad",
+        "tau = RC = 0.20 s",
+        "v_C(t) = 12 (1 - exp(-t / (0.20 s))) V",
+        "i(0+) = 6 mA"
+      ],
+      "diagram": {
+        "nodes": [
+          "source positive",
+          "resistor",
+          "capacitor",
+          "source negative",
+          "ground"
+        ],
+        "directed_edges": [
+          [
+            "source positive",
+            "resistor",
+            "initial conventional current"
+          ],
+          [
+            "resistor",
+            "capacitor",
+            "initial conventional current"
+          ],
+          [
+            "capacitor",
+            "source negative",
+            "return path"
+          ]
+        ],
+        "invariants": [
+          "Series circuit",
+          "Ground at common lower return",
+          "Positive source terminal is the upper terminal; source is 12 V"
+        ]
+      },
+      "required": [
+        "Capacitor initially uncharged",
+        "Switch closes at t = 0"
+      ],
+      "forbidden": [
+        "2 ohm instead of 2 kohm",
+        "100 mF instead of 100 microfarad",
+        "Discharging exponential substituted for charging curve"
+      ],
+      "assets": {
+        "png": {
+          "path": "02_rc_circuit.png",
+          "sha256": "3c1ee4317442dc7c4918613859b35898817e3995ebc160fe9d35acde1ae5f61b",
+          "bytes": 134188
+        },
+        "svg": {
+          "path": "02_rc_circuit.svg",
+          "sha256": "5f6c8bc4c1c9f372ba0f70a1cc50e3e2aeca085d469ba7aee45125fbddf1ccdb",
+          "bytes": 7488
+        }
+      }
+    },
+    {
+      "id": "03_calculus",
+      "title": "Derivative & area",
+      "equations": [
+        "f(x) = x^2",
+        "f'(x) = 2x",
+        "f(1) = 1",
+        "f'(1) = 2",
+        "integral_0^1 x^2 dx = 1/3"
+      ],
+      "diagram": {
+        "nodes": [
+          "x axis",
+          "y axis",
+          "parabola",
+          "tangent",
+          "shaded area"
+        ],
+        "directed_edges": [],
+        "invariants": [
+          "Parabola opens up",
+          "Tangent meets curve at (1,1) with slope 2",
+          "Shaded area below curve from x = 0 to 1"
+        ]
+      },
+      "required": [
+        "Integral bounds retained",
+        "Slope distinguished from function value"
+      ],
+      "forbidden": [
+        "Tangent slope is 1",
+        "Integral equals 1",
+        "Shading above curve"
+      ],
+      "assets": {
+        "png": {
+          "path": "03_calculus.png",
+          "sha256": "f0f46526f3117674d02ea61cf352079e3cdf2fcb5d800533781cd8b90cb3b962",
+          "bytes": 122251
+        },
+        "svg": {
+          "path": "03_calculus.svg",
+          "sha256": "aa17040b155b6a9a3bd970d3d19ba789fd140c6a7d7b9856d304822ea32c7483",
+          "bytes": 9754
+        }
+      }
+    },
+    {
+      "id": "04_bayes",
+      "title": "Bayes tree",
+      "equations": [
+        "P(D) = 0.01",
+        "P(+|D) = 0.90",
+        "P(+|not D) = 0.05",
+        "P(D|+) = 0.009 / (0.009 + 0.0495) approximately 0.154 = 15.4%"
+      ],
+      "diagram": {
+        "nodes": [
+          "start",
+          "D",
+          "not D",
+          "D positive",
+          "D negative",
+          "not D positive",
+          "not D negative"
+        ],
+        "directed_edges": [
+          [
+            "start",
+            "D",
+            "0.01"
+          ],
+          [
+            "start",
+            "not D",
+            "0.99"
+          ],
+          [
+            "D",
+            "D positive",
+            "0.90"
+          ],
+          [
+            "D",
+            "D negative",
+            "0.10"
+          ],
+          [
+            "not D",
+            "not D positive",
+            "0.05"
+          ],
+          [
+            "not D",
+            "not D negative",
+            "0.95"
+          ]
+        ]
+      },
+      "required": [
+        "Synthetic defect example",
+        "Posterior differentiated from sensitivity"
+      ],
+      "forbidden": [
+        "P(D|+) = 90%",
+        "False-positive probability substituted with 0.95"
+      ],
+      "assets": {
+        "png": {
+          "path": "04_bayes.png",
+          "sha256": "926468b21a384f56f1c4e53e876ae7424cb763d0feaf6a02a6e02762a6ccdf42",
+          "bytes": 142170
+        },
+        "svg": {
+          "path": "04_bayes.svg",
+          "sha256": "b58e4d4892b5f77b3b9fd0246997cfaab7b4ec021249a943beeea25fc227b78d",
+          "bytes": 7999
+        }
+      }
+    },
+    {
+      "id": "05_directed_graph",
+      "title": "BFS & a correction",
+      "equations": [
+        "distance(A)=0",
+        "distance(B)=1",
+        "distance(C)=1",
+        "distance(D)=2",
+        "distance(E)=2",
+        "time = O(V + E)"
+      ],
+      "diagram": {
+        "nodes": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "directed_edges": [
+          [
+            "A",
+            "B",
+            ""
+          ],
+          [
+            "A",
+            "C",
+            ""
+          ],
+          [
+            "B",
+            "D",
+            ""
+          ],
+          [
+            "C",
+            "D",
+            ""
+          ],
+          [
+            "C",
+            "E",
+            ""
+          ],
+          [
+            "D",
+            "E",
+            ""
+          ]
+        ]
+      },
+      "required": [
+        "BFS alphabetical order A, B, C, D, E",
+        "Shortest A to C to E has length 2",
+        "Crossed-out E level 3 is superseded by E level 2"
+      ],
+      "forbidden": [
+        "An edge between B and C",
+        "Undirected graph",
+        "E final level is 3"
+      ],
+      "assets": {
+        "png": {
+          "path": "05_directed_graph.png",
+          "sha256": "0042b2f88ad12167404dfad85f1d4fc7ee1263f298cf4a4babf6a557eb0bd332",
+          "bytes": 163272
+        },
+        "svg": {
+          "path": "05_directed_graph.svg",
+          "sha256": "bbe6892653911e085f4aba66f367f2a0d0e6faf09c36462ea8553180af137d71",
+          "bytes": 8259
+        }
+      }
+    },
+    {
+      "id": "06_uncertainty",
+      "title": "Ambiguity & crossings",
+      "equations": [
+        "R = 4.? kohm (last digit unclear)",
+        "z = 1 / [illegible]",
+        "v = i R"
+      ],
+      "diagram": {
+        "nodes": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "P",
+          "Q",
+          "R",
+          "S",
+          "J"
+        ],
+        "directed_edges": [
+          [
+            "A",
+            "B",
+            "crossing without connection"
+          ],
+          [
+            "C",
+            "D",
+            "crossing without connection"
+          ],
+          [
+            "P",
+            "J",
+            ""
+          ],
+          [
+            "J",
+            "Q",
+            ""
+          ],
+          [
+            "R",
+            "J",
+            ""
+          ],
+          [
+            "J",
+            "S",
+            ""
+          ]
+        ],
+        "invariants": [
+          "No node at A-B / C-D crossing",
+          "J is the shared node of the separate second diagram"
+        ]
+      },
+      "required": [
+        "Explicit uncertainty on resistor last digit",
+        "Explicit unreadable denominator",
+        "Source ambiguity remains visible in the result"
+      ],
+      "forbidden": [
+        "Any invented resistor digit",
+        "Any invented denominator",
+        "Connecting A-B to C-D at their crossing"
+      ],
+      "assets": {
+        "png": {
+          "path": "06_uncertainty.png",
+          "sha256": "a8349d10c8085f6451e5e66b6a16de4185710784b809a0e4cf642cf3c9a07c64",
+          "bytes": 168062
+        },
+        "svg": {
+          "path": "06_uncertainty.svg",
+          "sha256": "b860e5b568369d3d7e70cda6105c9051a5cd34a63a2ec60d7a23b399a1e47374",
+          "bytes": 7949
+        }
+      }
+    }
+  ]
+}

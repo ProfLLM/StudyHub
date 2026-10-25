@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1400" viewBox="0 0 1000 1400">
+<rect width="100%" height="100%" fill="#fffefa"/>
+<polyline points="35,145 970,145" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,197 970,197" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,249 970,249" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,301 970,301" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,353 970,353" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,405 970,405" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,457 970,457" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,509 970,509" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,561 970,561" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,613 970,613" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,665 970,665" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,717 970,717" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,769 970,769" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,821 970,821" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,873 970,873" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,925 970,925" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,977 970,977" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1029 970,1029" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1081 970,1081" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1133 970,1133" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1185 970,1185" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1237 970,1237" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1289 970,1289" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1341 970,1341" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="35,1393 970,1393" fill="none" stroke="#e0e7f0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="86,75 86,1370" fill="none" stroke="#e4bac0" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="108" y="43" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="18" fill="#6d737c">PUBLIC SYNTHETIC • hand-style typesetting, not actual pen input</text>
+<text x="108" y="113" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="37" fill="#2458a5">Bayes tree</text>
+<text x="110" y="188" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">D = defect (synthetic example)</text>
+<text x="110" y="242" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="27" fill="#243653">P(D)=0.01; P(+|D)=0.90; P(+|¬D)=0.05</text>
+<text x="120" y="526" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#243653">start</text>
+<polyline points="210,520 455,360" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="446.7426644259889,373.7046126985833 455,360 439.1319659830159,362.05073070778093" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="285" y="390" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="25" fill="#243653">0.01</text>
+<text x="470" y="368" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">D</text>
+<polyline points="210,520 455,690" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="439.19580061898705,687.5045477513703 455,690 447.1307070222673,676.068947346643" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="280" y="655" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="25" fill="#243653">0.99</text>
+<text x="470" y="703" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">¬D</text>
+<polyline points="520,360 775,290" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="762.949089244062,300.52499643479354 775,290 759.2645208162617,287.1026400192353" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="640" y="315.0" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="25" fill="#243653">0.90</text>
+<text x="795" y="300" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">+</text>
+<polyline points="520,360 775,445" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="759.1314031051795,447.04637058952994 775,445 763.5329448378616,433.8417453914837" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="640" y="392.5" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="25" fill="#243653">0.10</text>
+<text x="795" y="455" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">−</text>
+<polyline points="540,690 775,615" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="763.3908443250205,626.0103362579937 775,615 759.1589404342932,612.7503707337147" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="640" y="642.5" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="25" fill="#243653">0.05</text>
+<text x="795" y="625" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">+</text>
+<polyline points="540,690 775,795" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="759.0071053610777,795.4767819924579 775,795 764.6851811062254,782.7687077056988" fill="none" stroke="#243653" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="640" y="732.5" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="25" fill="#243653">0.95</text>
+<text x="795" y="805" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">−</text>
+<text x="110" y="963" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="28" fill="#243653">P(D|+) = 0.009 / (0.009 + 0.0495)</text>
+<text x="110" y="1030" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="30" fill="#243653">         ≈ 0.154 = 15.4%</text>
+<text x="110" y="1116" font-family="Comic Sans MS, Chalkboard SE, cursive" font-size="26" fill="#b34e57">A positive result does NOT imply 90% defect.</text>
+</svg>

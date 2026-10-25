@@ -85,13 +85,20 @@
       } else if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
         if (el instanceof HTMLInputElement && (el.type==='file'||el.type==='password')) {el.disabled=true;return;}
         if (saved !== undefined) {
-          if (el.type==='checkbox') el.checked = saved === true;
+          if (el instanceof HTMLSelectElement && el.multiple) {
+            const selected = new Set(Array.isArray(saved) ? saved : [String(saved ?? '')]);
+            for (const option of el.options) option.selected = selected.has(option.value);
+          }
+          else if (el.type==='checkbox') el.checked = saved === true;
           else if (el.type==='radio') el.checked = saved === el.value;
           else el.value = String(saved ?? '');
         }
         const update=()=>{
           if(el.type==='radio'&&!el.checked)return;
-          setAnswer(key,el.type==='checkbox'?el.checked:el.value);
+          const value = el instanceof HTMLSelectElement && el.multiple
+            ? Array.from(el.options).filter(option=>option.selected).map(option=>option.value)
+            : el.type==='checkbox'?el.checked:el.value;
+          setAnswer(key,value);
         };
         el.addEventListener('input',update);el.addEventListener('change',update);
       }

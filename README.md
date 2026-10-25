@@ -16,7 +16,7 @@ Create, browse, rename, and delete Classes and Lectures through the GUI. Select 
 
 On iPad, Lectures open an editable PencilKit canvas. Pencil writes and fingers scroll vertically, with a hard top stop and at most one blank viewport below the last ink. A separate HTML view preserves the original ink. On macOS, ink previews are read-only.
 
-**Create assignment** asks ChatGPT for an interactive learning experience from a Lecture. Assignments support written answers, choices, custom interactions and ink, with local answer saving. **Ask ChatGPT to review** sends a confirmed answer snapshot—including ink images—for separate feedback. See [Lecture assignments](docs/assignments.md) for use, isolation, storage and limits.
+**Create assignment** asks ChatGPT for an interactive learning experience from a Lecture. On iPadOS 16+ and macOS 13+, assignments support written answers, choices, custom interactions and ink, with local answer saving. **Ask ChatGPT to review** sends a confirmed answer snapshot—including ink images—for separate feedback. See [Lecture assignments](docs/assignments.md) for use, isolation, storage and limits.
 
 The ChatGPT connection uses the documented open-source subscription sign-in route. macOS sign-in and seven public synthetic image-to-HTML requests have completed through the real account connection. Physical handwriting and iPad account sign-in remain separate device acceptance checks. Claude support is deferred to [issue #6](https://github.com/ProfLLM/StudyHub/issues/6). This delivery needs no StudyHub-hosted connector. No API-billed fallback or manual import is substituted. See [Ink and HTML](docs/ink-and-html.md) for workflow, limits, and verification.
 

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -596,12 +595,17 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
           'Add lecture notes before creating an assignment.',
         );
       }
-      final inkImages = selected == null
-          ? <Uint8List>[]
-          : AssignmentDocument.inkImages(selected.answersJson);
+      final answerSnapshot = selected == null
+          ? null
+          : AssignmentDocument.reviewAnswers(
+              selected.answersJson,
+              firstImageIndex: sourcePreview == null ? 1 : 2,
+            );
       // Review uses the current lecture preview followed by answer canvases.
       // Generation uses the full ordered source tiles.
-      final images = review ? [?sourcePreview, ...inkImages] : sourceImages;
+      final images = review
+          ? [?sourcePreview, ...answerSnapshot!.images]
+          : sourceImages;
       final request = TextEditingController(
         text: 'Help me deeply understand this lecture. Choose activities that uncover misconceptions and build my reasoning.',
       );
@@ -690,24 +694,13 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
       if (!await _showPlanNotice(provider, operation)) return;
       if (!mounted || operation != _operation) return;
       setState(() => _connected = true);
-      // Omit duplicate base64 from the text part; each ink entry maps to its
-      // separately attached image in insertion order.
-      final answers = selected == null
-          ? <String, dynamic>{}
-          : jsonDecode(selected.answersJson) as Map<String, dynamic>;
-      var imageIndex = sourcePreview == null ? 1 : 2;
-      answers.updateAll(
-        (key, value) => value is Map && value['kind'] == 'ink'
-            ? {'kind': 'ink', 'attachedImage': imageIndex++}
-            : value,
-      );
       final result = review
           ? await (provider as LectureAssignmentProvider).reviewAssignment(
               images: images,
               lectureTitle: widget.lecture.title,
               sourceNotes: sourceNotes,
               assignmentHtml: selected!.html,
-              answersJson: jsonEncode(answers),
+              answersJson: answerSnapshot!.answersJson,
             )
           : await (provider as LectureAssignmentProvider).createAssignment(
               images: images,
@@ -747,9 +740,22 @@ class LectureWorkspaceState extends State<LectureWorkspace> {
             ? 'Review ready. AI feedback can be mistaken; compare it with your reasoning.'
             : 'Assignment ready. Your lecture notes are unchanged.';
       });
-      if (_ink.ready.value) await _ink.setActive(false);
+      // Persistence cannot depend on a platform-view presentation operation.
+      // Queue first so a failed deactivation never leaves a result only in RAM.
       _enqueueSave(updated);
       await _saveTail;
+      if (!mounted || operation != _operation) return;
+      if (_ink.ready.value) {
+        try {
+          await _ink.setActive(false);
+        } catch (_) {
+          if (mounted) {
+            setState(
+              () => _message = 'The ink view could not pause. Your result is retained; retry opening the lecture.',
+            );
+          }
+        }
+      }
     } on EnrichmentException catch (error) {
       if (mounted &&
           (operation == _operation ||

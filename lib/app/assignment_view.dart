@@ -115,6 +115,12 @@ class _AssignmentViewState extends State<AssignmentView>
         () => _fail('The assignment did not finish loading. Retry opening it.'),
       );
     } catch (error) {
+      if (error is PlatformException && error.code == 'unsupported_os') {
+        _fail(
+          'Interactive assignments require iPadOS 16 or macOS 13 or later. Your saved assignments and answers are preserved.',
+        );
+        return;
+      }
       assert(() {
         debugPrint(
           'Assignment renderer failure: ${error is PlatformException ? error.code : error.runtimeType}',

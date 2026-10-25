@@ -55,7 +55,7 @@ The license uses the [standard MIT terms published by the Open Source Initiative
 | Topic | Decision |
 | --- | --- |
 | Experience | Create an assignment from a Lecture and a learner request. ChatGPT chooses interactions to support understanding; assignments are separate from source notes and the static HTML rendition. |
-| Runtime | Separate WebKit host and opaque-origin sandboxed iframe. Inline scripts are permitted only inside the assignment; network/files/navigation are blocked. No credentials, library operations or AI calls are exposed. |
+| Runtime | Interactive assignments require iPadOS 16+/macOS 13+ for per-view WebKit Lockdown, which disables WebRTC socket/DNS access. Older systems refuse script execution; other app minimums are unchanged. Separate WebKit host and opaque-origin sandboxed iframe. Inline scripts are permitted only inside the assignment; network/files/navigation are blocked. No credentials, library operations or AI calls are exposed. |
 | Answers | App-owned, bounded JSON persistence for form values, custom state and PNG ink. Existing data survives failures. Creation adds an assignment rather than replacing earlier attempts. |
 | Review | Explicit confirmation sends the assignment, saved answer snapshot, ink images and current lecture context through the existing ChatGPT connection. Feedback is static and advisory; it never overwrites answers and is marked stale after edits. |
 | Storage | Upgrade the per-Lecture sidecar to v2 when adding assignments; read existing v1. Preserve library v1. Older app versions reject v2. Keep simple local atomic writes and explicit size limits. |

@@ -44,6 +44,7 @@ class _Provider
   }) async =>
       '''
     <h1>Synthetic force assignment</h1><label>Explain<input data-answer-key="reason" value="initial"></label>
+    <select multiple data-answer-key="forces"><option value="gravity">Gravity</option><option value="normal">Normal</option><option value="friction">Friction</option></select>
     <canvas data-answer-key="drawing" width="300" height="120" style="background:white"></canvas>
     <script>
     document.addEventListener('DOMContentLoaded', async()=>{
@@ -53,6 +54,25 @@ class _Provider
         studyhub.setAnswer('bridgeProbeFinished',true);
       },700);
       const previous=studyhub.getAnswer('reason');
+      const select=document.querySelector('select');
+      if(!studyhub.getAnswer('forces')) {
+        select.options[0].selected=true;select.options[1].selected=true;
+        select.dispatchEvent(new Event('input'));
+      }
+      studyhub.setAnswer('restoredForces',Array.from(select.selectedOptions).map(o=>o.value));
+      for(const name of ['RTCPeerConnection','webkitRTCPeerConnection']) {
+        let blocked=false;
+        try {
+          const peer=new window[name]({iceServers:[{urls:'${endpoint.replaceFirst('http:', 'stun:').replaceFirst('//', '')}'}]});
+          peer.createDataChannel('probe');await peer.setLocalDescription(await peer.createOffer());
+        } catch(e) {blocked=true;}
+        studyhub.setAnswer(name+'Blocked',blocked);
+      }
+      const realm=document.createElement('iframe');document.body.append(realm);
+      let childRtcBlocked=true;
+      try {childRtcBlocked=typeof realm.contentWindow.RTCPeerConnection==='undefined';}catch(e){}
+      studyhub.setAnswer('childRtcBlocked',childRtcBlocked);
+      realm.remove();
       if(!previous) {
         const input=document.querySelector('input');input.value='Forces balance';input.dispatchEvent(new Event('input'));
         const c=document.querySelector('canvas');const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,300,120);ctx.fillStyle='black';ctx.fillText('F = ma',20,40);
@@ -108,6 +128,18 @@ void main() {
       );
       final store = _RecordingStore(dir);
       final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final udp = await RawDatagramSocket.bind(
+        InternetAddress.loopbackIPv4,
+        server.port,
+      );
+      var datagrams = 0;
+      udp.listen((event) {
+        if (event == RawSocketEvent.read) {
+          while (udp.receive() != null) {
+            datagrams++;
+          }
+        }
+      });
       var connections = 0;
       server.listen((r) {
         connections++;
@@ -116,6 +148,7 @@ void main() {
       final provider = _Provider('http://127.0.0.1:${server.port}');
       addTearDown(() async {
         await server.close();
+        udp.close();
         await dir.delete(recursive: true);
       });
       Future<void> mount() async {
@@ -186,6 +219,12 @@ void main() {
       expect(answers['networkBlocked'], true);
       expect(answers['fileBlocked'], true);
       expect(answers['storageDenied'], true);
+      expect(answers['RTCPeerConnectionBlocked'], true);
+      expect(answers['webkitRTCPeerConnectionBlocked'], true);
+      expect(answers['childRtcBlocked'], true);
+      expect(answers['forces'], ['gravity', 'normal']);
+      expect(answers['restoredForces'], ['gravity', 'normal']);
+      expect(datagrams, 0);
       expect(answers.containsKey('forged'), false);
       expect(store.sawForged, false);
       expect(answers['reason'], 'Forces balance');
@@ -203,6 +242,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await waitFor(() => provider.reviewedAnswers != null);
       expect(provider.reviewedAnswers, contains('Forces balance'));
+      expect(jsonDecode(provider.reviewedAnswers!)['forces'], [
+        'gravity',
+        'normal',
+      ]);
       expect(provider.reviewedImages!.length, inInclusiveRange(1, 2));
       expect(provider.reviewedImages!.last.take(8), [
         137,
@@ -242,6 +285,13 @@ void main() {
         (await store.load('assignment-lecture')).assignments.single.answersJson,
         contains('Forces balance'),
       );
+      await tester.pump(const Duration(milliseconds: 600));
+      final reopened = jsonDecode(
+        (await store.load('assignment-lecture')).assignments.single.answersJson,
+      );
+      expect(reopened['forces'], ['gravity', 'normal']);
+      expect(reopened['restoredForces'], ['gravity', 'normal']);
+      expect(datagrams, 0);
       expect(connections, 0);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 400));

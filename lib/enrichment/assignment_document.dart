@@ -96,11 +96,21 @@ class AssignmentDocument {
 
   /// Only bounded PNG answers are exported to the multimodal provider. Stored
   /// answer JSON remains the authoritative snapshot sent alongside these images.
-  static List<Uint8List> inkImages(String answersJson) {
+  static List<Uint8List> inkImages(String answersJson) =>
+      reviewAnswers(answersJson).images;
+
+  /// Build the image list and its text references in one pass. Custom state
+  /// that is not an actual PNG answer must not consume an attachment index.
+  static ({List<Uint8List> images, String answersJson}) reviewAnswers(
+    String answersJson, {
+    int firstImageIndex = 1,
+  }) {
     LectureAssignment.validateAnswers(answersJson);
     final result = <Uint8List>[];
+    final answers = jsonDecode(answersJson) as Map<String, dynamic>;
     var bytes = 0;
-    for (final value in (jsonDecode(answersJson) as Map).values) {
+    for (final entry in answers.entries.toList()) {
+      final value = entry.value;
       if (value is! Map || value['kind'] != 'ink' || value['png'] is! String) {
         continue;
       }
@@ -125,8 +135,12 @@ class AssignmentDocument {
           ].asMap().entries.every((e) => image[e.key] == e.value)) {
         throw const FormatException('Invalid or oversized ink answer.');
       }
+      answers[entry.key] = {
+        'kind': 'ink',
+        'attachedImage': firstImageIndex + result.length,
+      };
       result.add(image);
     }
-    return result;
+    return (images: result, answersJson: jsonEncode(answers));
   }
 }

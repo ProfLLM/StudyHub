@@ -99,6 +99,15 @@ class _InkController extends InkCanvasController {
   Future<List<Uint8List>> exportImages() async => snapshot.images;
 }
 
+class _FailingPauseInkController extends _InkController {
+  bool failPause = true;
+  @override
+  Future<void> setActive(bool value) async {
+    if (!value && failPause) throw StateError('Synthetic view pause failure');
+    return super.setActive(value);
+  }
+}
+
 class _Provider implements LectureEnrichmentProvider {
   _Provider({this.name = 'ChatGPT'});
 
@@ -250,6 +259,113 @@ Future<void> _send(WidgetTester tester, {String provider = 'ChatGPT'}) async {
 }
 
 void main() {
+  testWidgets(
+    'completed assignment and feedback survive ink view pause failures',
+    (tester) async {
+      final store = _MemoryStore(_ink());
+      final provider = _AssignmentProvider();
+      final ink = _FailingPauseInkController();
+      final key = GlobalKey<LectureWorkspaceState>();
+      await _mount(
+        tester,
+        store: store,
+        ink: ink,
+        providers: [provider],
+        key: key,
+      );
+      await _createAssignment(tester);
+      await tester.pumpAndSettle();
+      expect(store.content.assignments, hasLength(1));
+      expect(await key.currentState!.prepareToLeave(), false);
+      // Native pause is required before leaving, but the completed generation
+      // has already reached durable storage even when that view operation fails.
+      ink.failPause = false;
+      expect(await key.currentState!.prepareToLeave(), true);
+      await key.currentState!.resumeAfterNavigation();
+      await tester.pump();
+      ink.failPause = true;
+      await tester.tap(find.text('Ask ChatGPT to review'));
+      await _advance(tester);
+      await tester.tap(find.text('Send answers'));
+      await _advance(tester);
+      expect(
+        store.content.assignments.single.feedbackHtml,
+        contains('Reasoning feedback'),
+      );
+    },
+  );
+
+  testWidgets(
+    'view pause and save failures retain a retryable completed assignment',
+    (tester) async {
+      final store = _MemoryStore(_ink());
+      final provider = _AssignmentProvider()
+        ..assignmentResult = Completer<String>();
+      final ink = _FailingPauseInkController();
+      final key = GlobalKey<LectureWorkspaceState>();
+      await _mount(
+        tester,
+        store: store,
+        ink: ink,
+        providers: [provider],
+        key: key,
+      );
+      await _createAssignment(tester);
+      store.failSave = true;
+      provider.assignmentResult!.complete('<h1>Completed practice</h1>');
+      await tester.pumpAndSettle();
+      expect(store.content.assignments, isEmpty);
+      expect(find.text('Retry saving'), findsOneWidget);
+      expect(find.text('Saved'), findsNothing);
+      expect(await key.currentState!.prepareToLeave(), false);
+      store.failSave = false;
+      await tester.tap(find.text('Retry saving'));
+      await tester.pumpAndSettle();
+      expect(
+        store.content.assignments.single.html,
+        contains('Completed practice'),
+      );
+      expect(provider.assignmentCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'review preserves custom ink metadata without shifting sketch attachment',
+    (tester) async {
+      final store = _MemoryStore(_ink());
+      final provider = _AssignmentProvider();
+      await _mount(
+        tester,
+        store: store,
+        ink: _InkController(),
+        providers: [provider],
+      );
+      await _createAssignment(tester);
+      tester
+          .widget<AssignmentView>(find.byType(AssignmentView))
+          .onChanged(
+            jsonEncode({
+              'drawingMode': {'kind': 'ink', 'tool': 'pen'},
+              'sketch': {
+                'kind': 'ink',
+                'png': 'data:image/png;base64,${base64Encode(_png)}',
+              },
+              'forces': ['gravity', 'normal'],
+            }),
+          );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ask ChatGPT to review'));
+      await _advance(tester);
+      await tester.tap(find.text('Send answers'));
+      await _advance(tester);
+      expect(provider.reviewImages, hasLength(2));
+      expect(provider.reviewImages!.last, _png);
+      final answers = jsonDecode(provider.reviewAnswers!);
+      expect(answers['sketch']['attachedImage'], 2);
+      expect(answers['drawingMode'], {'kind': 'ink', 'tool': 'pen'});
+      expect(answers['forces'], ['gravity', 'normal']);
+    },
+  );
   testWidgets(
     'teaching HTML opens first and is included when creating an assignment without ink',
     (tester) async {

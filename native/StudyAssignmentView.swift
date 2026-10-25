@@ -18,7 +18,15 @@ final class StudyAssignmentRenderer: NSObject, WKNavigationDelegate {
   init(viewId: Int64, messenger: FlutterBinaryMessenger) {
     let config = WKWebViewConfiguration()
     config.websiteDataStore = .nonPersistent()
-    config.defaultWebpagePreferences.allowsContentJavaScript = true
+    // URL rules and CSP do not cover WebRTC's ICE sockets or DNS. Use the
+    // public per-view Lockdown setting, which removes WebRTC in all frames.
+    // Older systems must never load generated scripts without that boundary.
+    if #available(iOS 16.0, macOS 13.0, *) {
+      config.defaultWebpagePreferences.isLockdownModeEnabled = true
+      config.defaultWebpagePreferences.allowsContentJavaScript = true
+    } else {
+      config.defaultWebpagePreferences.allowsContentJavaScript = false
+    }
     config.preferences.javaScriptCanOpenWindowsAutomatically = false
     webView = WKWebView(frame: .zero, configuration: config)
     channel = FlutterMethodChannel(name: "studyhub/assignment/\(viewId)", binaryMessenger: messenger)
@@ -44,6 +52,9 @@ final class StudyAssignmentRenderer: NSObject, WKNavigationDelegate {
       }
       guard call.method == "load", let html = call.arguments as? String, html.utf8.count <= 16 * 1024 * 1024 else {
         reply(FlutterError(code: "document", message: "Invalid assignment document.", details: nil)); return
+      }
+      guard #available(iOS 16.0, macOS 13.0, *) else {
+        reply(FlutterError(code: "unsupported_os", message: "Interactive assignments require iPadOS 16 or macOS 13 or later.", details: nil)); return
       }
       self.loaded = false
       // Block every URL scheme, allowing only in-memory documents and data
